@@ -1,0 +1,72 @@
+<?php
+/**
+ * @file
+ * A few sample tests to show how it can work.
+ */
+
+class SampleSeleniumTestCase extends DrupalSeleniumWebTestCase {
+
+  /**
+   * Gets test info.
+   *
+   * @see DrupalWebTestCase::getInfo()
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Sample Selenium Test',
+      'description' => 'A sample test for Drupal Selenium.',
+      'group' => 'Drupal Selenium Integration',
+      'browsers' => array('firefox', 'chrome'),
+    );
+  }
+
+  /**
+   * Sets up the test.
+   *
+   * @see DrupalSeleniumWebTestCase::setUp()
+   */
+  public function setUp() {
+    parent::setUp('selenium');
+  }
+
+  /**
+   * Adds an article using DrupalPost, then asserts that it is filled out.
+   */
+  public function testDrupalPost() {
+    $user = $this->drupalCreateUser(array_keys(module_invoke_all('permission')));
+    $this->drupalLogin($user);
+
+    $title = $this->randomName();
+    $body = $this->randomString();
+    $edit = array(
+      'title' => $title,
+      'body[und][0][value]' => $body,
+    );
+    $this->drupalPost('/node/add/article', $edit, 'Save');
+
+    $this->assertUrl('/node/1');
+    $this->assertFieldById('page-title', $title);
+    $this->assertTitle("$body | " . variable_get('site_name'));
+  }
+
+  /**
+   * Does the same thing as testDrupalPost(), but manually.
+   */
+  public function testManualPost() {
+    $user = $this->drupalCreateUser(array_keys(module_invoke_all('permission')));
+    $this->drupalLogin($user);
+
+    $title = $this->randomName();
+    $body = $this->randomString();
+
+    $this->sendKeysToElement($this->getElement('id=edit-title'), $title);
+    $this->sendKeysToElement($this->getElement('id=edit-body-und-0-value'), $body);
+    $this->clickElement($this->getElement('id=edit-submit'));
+
+    $this->waitForElements('css=body');
+
+    $this->assertUrl('/node/1');
+    $this->assertFieldById('page-title', $title);
+    $this->assertTitle("$body | " . variable_get('site_name'));
+  }
+}

@@ -1,0 +1,104 @@
+<?php
+
+/**
+ * @file
+ * Install/Uninstall hooks for Selenium module.
+ */
+
+/**
+ * Implements hook_requirements().
+ */
+function selenium_requirements() {
+  $t = get_t();
+  $url = variable_get('selenium_server_host', 'localhost:4444');
+
+  // Check the server response.
+  $response = selenium_get_server_status($url);
+  // If the server doesn't respond or return JSON.
+  if (!$response || $response === NULL) {
+    $server_description = $t('Unable to connect to Selenium server at !location. The server may not be running, or you may need to use alternate settings at <a href="/admin/config/development/testing/settings">the testing configuration page</a>.', array(
+      '!location' => $url,
+    ));
+    $server_value = $t("Unable to connect");
+    $server_severity = REQUIREMENT_ERROR;
+  }
+  elseif (isset($response['status'])) {
+    // If the server returns JSON and the status is 0.
+    if ($response['status'] === 0) {
+      $server_value = $t("Successfully connected at !location.", array('!location' => $url));
+      $server_severity = REQUIREMENT_OK;
+    }
+    // If the server returns JSON, but the status isn't 0.
+    elseif ($response['status'] !== 0) {
+      $status_codes = SeleniumWebDriver::$statusCodes;
+      $server_description = $t('Selenium server at default location !location returned a non-zero error code !code (!message). Please check the server status, or set up an alternate connection at <a href="/admin/config/development/testing/settings">the testing configuration page</a>.', array(
+        '!location' => $url,
+        '!code' => $response['status'],
+        '!message' => $status_codes[$response['status']][0] . " - " . $status_codes[$response['status']][1],
+      ));
+      $server_value = $t("Non-zero response");
+      $server_severity = REQUIREMENT_WARNING;
+    }
+  }
+  // If some stupid thing happens.
+  else {
+    $server_description = $t('An unknown error occured while trying to connect to the Selenium server at default location !location. Check the settings at settings at <a href="/admin/config/development/testing/settings">the testing configuration page</a>.', array('!location' => $url));
+    $server_value = $t("Unknown error");
+    $server_severity = REQUIREMENT_ERROR;
+  }
+
+  // Check the status of the default browsers.
+  $browsers = explode(', ', variable_get('selenium_allowed_browsers', 'firefox, chrome'));
+  $browser_requirements = array();
+  foreach ($browsers as $browser) {
+    $status = selenium_check_browser_status($browser);
+    $browser_requirements[$browser]['title'] = $t('Selenium !browser Browser Status', array('!browser' => ucfirst($browser)));
+    if (!$status) {
+      $browser_requirements[$browser]['description'] = $t('No executable found for !browser. To use with tests, the browser should be installed and executable from $PATH; otherwise, it should be removed from the <a href="/admin/config/development/testing/settings">list of allowed browsers</a>.', array(
+        '!browser' => ucfirst($browser),
+      ));
+      $browser_requirements[$browser]['value'] = $t('Command not found');
+      $browser_requirements[$browser]['severity'] = REQUIREMENT_ERROR;
+    }
+    else {
+      $browser_requirements[$browser]['value'] = $t('Executable found');
+      $browser_requirements[$browser]['severity'] = REQUIREMENT_OK;
+    }
+  }
+
+  // Add the statuses to the results array and return it.
+  $results = array(
+    array(
+      'title' => $t("Selenium Server Status"),
+      'description' => $server_description,
+      'value' => $server_value,
+      'severity' => $server_severity,
+    ),
+  );
+  foreach ($browser_requirements as $browser) {
+    $results[] = array(
+      'title' => $browser['title'],
+      'description' => isset($browser['description']) ? $browser['description'] : NULL,
+      'value' => $browser['value'],
+      'severity' => $browser['severity'],
+    );
+  }
+  return $results;
+}
+
+/**
+ * Implements hook_install().
+ */
+function selenium_install() {
+  // Initially set the defaults, so we can use them in our checks.
+  variable_set('selenium_server_host', 'localhost:4444');
+  variable_set('selenium_allowed_browsers', 'firefox, chrome');
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function selenium_uninstall() {
+  variable_del('selenium_server_host');
+  variable_del('selenium_allowed_browsers');
+}
