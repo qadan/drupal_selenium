@@ -1,0 +1,6 @@
+name = Generic Page
+description = Generates a generic page that has all the form controls necessary to test the Drupal Selenium module.
+package = Development
+core = 7.x
+version = 7.x-1.0
+hidden = TRUE

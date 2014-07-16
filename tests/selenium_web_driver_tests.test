@@ -1,0 +1,29 @@
+<?php
+/**
+ * @file
+ * Tests the various Selenium endpoints.
+ */
+
+class SeleniumWebDriverEndpointTestCase extends DrupalSeleniumWebTestCase {
+
+  /**
+   * Gets test info.
+   *
+   * @see DrupalWebTestCase::getInfo()
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Selenium Endpoint Tests',
+      'description' => 'Tests that functions making requests to the various Selenium endpoints function correctly.',
+      'group' => 'Drupal Selenium Integration',
+      'browsers' => array('chrome', 'firefox'),
+    );
+  }
+
+  /**
+   * Sets up the test.
+   */
+  public function setUp() {
+    parent::setUp();
+  }
+}
