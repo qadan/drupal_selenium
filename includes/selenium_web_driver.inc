@@ -47,6 +47,13 @@ class SeleniumWebDriver {
   );
 
   /**
+   * Destructor; closes the session when the driver is no longer needed.
+   */
+  public function __destruct() {
+    $this->execute("DELETE", "/session/:sessionId");
+  }
+
+  /**
    * Executes a call to server.
    *
    * @param string $http_type

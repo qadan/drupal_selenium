@@ -5,6 +5,8 @@
  * Install/Uninstall hooks for Selenium module.
  */
 
+require_once "selenium.module";
+
 /**
  * Implements hook_requirements().
  */
@@ -13,6 +15,7 @@ function selenium_requirements() {
   $url = variable_get('selenium_server_host', 'localhost:4444');
 
   // Check the server response.
+  module_load_include('inc', 'selenium', 'includes/utilities');
   $response = selenium_get_server_status($url);
   // If the server doesn't respond or return JSON.
   if (!$response || $response === NULL) {
@@ -20,7 +23,7 @@ function selenium_requirements() {
       '!location' => $url,
     ));
     $server_value = $t("Unable to connect");
-    $server_severity = REQUIREMENT_ERROR;
+    $server_severity = REQUIREMENT_WARNING;
   }
   elseif (isset($response['status'])) {
     // If the server returns JSON and the status is 0.
@@ -44,12 +47,13 @@ function selenium_requirements() {
   else {
     $server_description = $t('An unknown error occured while trying to connect to the Selenium server at default location !location. Check the settings at settings at <a href="/admin/config/development/testing/settings">the testing configuration page</a>.', array('!location' => $url));
     $server_value = $t("Unknown error");
-    $server_severity = REQUIREMENT_ERROR;
+    $server_severity = REQUIREMENT_WARNING;
   }
 
   // Check the status of the default browsers.
   $browsers = explode(', ', variable_get('selenium_allowed_browsers', 'firefox, chrome'));
   $browser_requirements = array();
+  module_load_include('inc', 'selenium', 'includes/utilities');
   foreach ($browsers as $browser) {
     $status = selenium_check_browser_status($browser);
     $browser_requirements[$browser]['title'] = $t('Selenium !browser Browser Status', array('!browser' => ucfirst($browser)));
@@ -58,7 +62,7 @@ function selenium_requirements() {
         '!browser' => ucfirst($browser),
       ));
       $browser_requirements[$browser]['value'] = $t('Command not found');
-      $browser_requirements[$browser]['severity'] = REQUIREMENT_ERROR;
+      $browser_requirements[$browser]['severity'] = REQUIREMENT_WARNING;
     }
     else {
       $browser_requirements[$browser]['value'] = $t('Executable found');

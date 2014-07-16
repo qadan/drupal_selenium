@@ -43,7 +43,7 @@ This will start a Selenium server on port 4444.
 
 ### Alternate Step 2)
 
-For systems that have no natural display buffer, a virtual display buffer , such as X Virtual Frame Buffer (XVFB), may be required to start browsers from.
+For systems that have no natural display buffer, a virtual display buffer, such as X Virtual Frame Buffer (XVFB), may be required to start browsers from.
 
 To install XVFB on Debian-based systems:
 
@@ -62,3 +62,8 @@ The Drupal Selenium Integration module can be configured on your site at admin/c
 The Selenium server host and port section allows you to specify where the Selenium server is hosted at. The page will attempt to establish a connection to that server, obtain its status, and let you know if any issues were encountered.
 
 Allowed Selenium Browsers is a list of comma-and-space-separated browsers that tests consider to be valid for spinning up. The browsers 'firefox' and 'chrome' are handled especially by the module, and any others are handled by a generic driver that attempts to instantiate a Selenium session using it. THIS FEATURE SHOULD BE USED AT YOUR OWN RISK.
+
+## Notes about supported browsers
+
+* Firefox simply needs to be installed and should run through Selenium without any trouble. For more information and troubleshooting, you can check https://code.google.com/p/selenium/wiki/FirefoxDriver.
+* Chrome requires the Selenium chromedriver to be installed before it will run tests. Links to the download for the chromedriver, as well as more information and troubleshooting, can be found here: https://code.google.com/p/selenium/wiki/ChromeDriver.
