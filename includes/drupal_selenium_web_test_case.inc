@@ -64,6 +64,8 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
     if (isset($modules[0]) && is_array($modules[0])) {
       $modules = $modules[0];
     }
+    // Always use this module.
+    $modules[] = 'selenium';
     parent::setUp($modules);
     // Determine what browser to run. Also determine if we are allowed to use
     // the browser in question. Firefox is run when no other browser is present.
@@ -100,7 +102,6 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
       $this->switchConnectionTo('simpletest_sandbox');
     }
     parent::tearDown();
-    $this->driver->execute("DELETE", "/session/:sessionId");
   }
 
   /**
@@ -164,6 +165,7 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    */
   public function run(array $methods = array()) {
     // Determine the status of the server.
+    module_load_include('inc', 'selenium', 'includes/utilities');
     $url = variable_get('selenium_server_host', 'localhost:4444');
     $response = selenium_get_server_status($url);
     if (!$response || $response === NULL) {
@@ -231,6 +233,7 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
         );
 
         // Run test in each browser.
+        module_load_include('inc', 'selenium', 'includes/utilities');
         foreach ($info['browsers'] as $browser) {
           // Check that the browser specified is available. Don't run if it's
           // not.
@@ -319,10 +322,10 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
   /**
    * Log in a user using the interface.
    *
-   * @param object $account
+   * @param stdClass $account
    *   The user account to log in with.
    */
-  protected function drupalLogin($account) {
+  protected function drupalLogin(stdClass $account) {
     // If someone is logged in, log them out first.
     if ($this->loggedInUser) {
       $this->drupalLogout();
@@ -650,7 +653,7 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
     if ($is_select) {
       $id = $this->getElementAttributeValue($element, 'id');
       $message = $message ? $message : t('Option @option for field @id is selected.', array('@option' => $option, '@id' => $id));
-      $selected_options = $this->getSelectedItem($element);
+      $selected_options = $this->getSelectedElement($element);
       foreach ($selected_options as $selected_option) {
         if ($this->getElementValue($selected_option) == $option) {
           $selected = TRUE;
@@ -691,7 +694,7 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
     if ($is_select) {
       $id = $this->getElementAttributeValue($element, 'id');
       $message = $message ? $message : t('Option @option for field @id is not selected.', array('@option' => $option, '@id' => $id));
-      $selected_options = $this->getSelectedItem($element);
+      $selected_options = $this->getSelectedElement($element);
       foreach ($selected_options as $selected_option) {
         if ($this->getElementValue($selected_option) == $option) {
           $selected = TRUE;
@@ -1016,7 +1019,7 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    * @return bool
    *   TRUE on pass, FALSE on failure.
    */
-  protected function drupalPost($path, $edit, $submit, $disable_js = array()) {
+  protected function postUrl($path, $edit, $submit, $disable_js = array()) {
     if ($this->getUrl() != $path && !is_null($path)) {
       $this->openUrl($path);
     }
@@ -1091,10 +1094,10 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
   /**
    * Injects javascript code to disable work of some of the drupal javascripts.
    *
-   * For example vertical tabs hides some of the elements on the node form.
-   * This leads to situation when Selenium can't access to hidden fields. So if
-   * we use drupalPost method that should behave similar to native simpletest
-   * method we are not able to submit the form properly.
+   * For example, vertical tabs hide some elements on a form. This leads to
+   * situations where Selenium can't access tthe hidden fields. So, if we used
+   * the postUrl method with these hidden elements, we would not be able to
+   * submit the form properly.
    *
    * @param array $scripts
    *   The scripts to disable.
@@ -1146,7 +1149,7 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    * @return array
    *   The selected options array.
    */
-  protected function getSelectedItem(SeleniumWebElement $element) {
+  protected function getSelectedElement(SeleniumWebElement $element) {
     $result = array();
     foreach ($this->getOptions($element) as $option) {
       if ($this->isElementSelected($option)) {

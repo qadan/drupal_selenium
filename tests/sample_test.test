@@ -15,7 +15,7 @@ class SampleSeleniumTestCase extends DrupalSeleniumWebTestCase {
     return array(
       'name' => 'Sample Selenium Test',
       'description' => 'A sample test for Drupal Selenium.',
-      'group' => 'Drupal Selenium Integration',
+      'group' => 'Drupal Selenium Integration Sample',
       'browsers' => array('firefox', 'chrome'),
     );
   }
@@ -26,13 +26,13 @@ class SampleSeleniumTestCase extends DrupalSeleniumWebTestCase {
    * @see DrupalSeleniumWebTestCase::setUp()
    */
   public function setUp() {
-    parent::setUp('selenium');
+    parent::setUp();
   }
 
   /**
-   * Adds an article using DrupalPost, then asserts that it is filled out.
+   * Adds an article using postUrl, then asserts that it is filled out.
    */
-  public function testDrupalPost() {
+  public function testPostUrl() {
     $user = $this->drupalCreateUser(array_keys(module_invoke_all('permission')));
     $this->drupalLogin($user);
 
@@ -42,7 +42,7 @@ class SampleSeleniumTestCase extends DrupalSeleniumWebTestCase {
       'title' => $title,
       'body[und][0][value]' => $body,
     );
-    $this->drupalPost('/node/add/article', $edit, 'Save');
+    $this->postUrl('/node/add/article', $edit, 'Save');
 
     $this->assertUrl('/node/1');
     $this->assertFieldById('page-title', $title);
@@ -50,7 +50,7 @@ class SampleSeleniumTestCase extends DrupalSeleniumWebTestCase {
   }
 
   /**
-   * Does the same thing as testDrupalPost(), but manually.
+   * Does the same thing as testPostUrl(), but manually.
    */
   public function testManualPost() {
     $user = $this->drupalCreateUser(array_keys(module_invoke_all('permission')));

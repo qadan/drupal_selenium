@@ -2,21 +2,13 @@ name = Selenium Integration
 description = Allows Selenium-style tests to be created and run through a custom Drupal WebDriver using SimpleTest.
 package = Development
 core = 7.x
+version = 7.x-1.0
 
-files[] = selenium.install
 files[] = includes/drupal_selenium_web_test_case.inc
 files[] = includes/selenium_browser_drivers.inc
 files[] = includes/selenium_web_driver.inc
 files[] = includes/selenium_web_element.inc
-files[] = tests/autocomplete.test
-files[] = tests/machine_name.test
-files[] = tests/collapse.test
-files[] = tests/vertical_tabs.test
-files[] = tests/textarea.test
-files[] = tests/tableselect.test
-files[] = tests/tableheader.test
-files[] = tests/tabledrag.test
-files[] = tests/states.test
-files[] = tests/upload.test
+files[] = includes/utilities.inc
+files[] = tests/sample_test.test
 
 dependencies[] = simpletest
