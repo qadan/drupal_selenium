@@ -1,0 +1,74 @@
+<?php
+/**
+ * @file
+ * A generic page to be used during Selenium tests.
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function generic_page_menu() {
+  return array(
+    'generic_page' => array(
+      'title' => 'Generic Page',
+      'description' => 'A generic page for use during Selenium tests.',
+      'page callback' => 'generic_page_render_page',
+      'type' => MENU_NORMAL_ITEM,
+    ),
+  );
+}
+
+/**
+ * Renders a generic page.
+ */
+function generic_page_render_page(array $form, array &$form_state) {
+  $form = array(
+    'generic_page_fieldset' => array(
+      '#type' => 'fieldset',
+      '#title' => t('Fieldset'),
+      '#collapsible' => TRUE,
+      '#collapsed' => FALSE,
+      'table' => array(
+        '#type' => 'table',
+        '#header' => array(
+          'link' => t('Link'),
+          'textfield' => t('Text Field'),
+        ),
+        '#options' => array(
+          'option_1' => array(
+            'link' => array(
+              '#type' => 'link',
+              '#title' => t('Option 1'),
+              '#href' => '',
+            ),
+            'textfield' => array(
+              '#type' => 'textfield',
+              '#title' => t('Text Field 1'),
+            ),
+          ),
+          'option_2' => array(
+            'link' => array(
+              '#type' => 'link',
+              '#title' => t('Option 2'),
+              '#href' => '/admin',
+            ),
+            'textfield' => array(
+              '#type' => 'textfield',
+              '#title' => t('Text Field 2'),
+            ),
+          ),
+        ),
+      ),
+      'checkbox' => array(
+
+      ),
+      'radios' => array(
+
+      ),
+      'markup' => array(
+
+      ),
+    ),
+  );
+  return $form;
+}
