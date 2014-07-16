@@ -5,7 +5,7 @@
  * Install/Uninstall hooks for Selenium module.
  */
 
-require_once "selenium.module";
+require_once dirname(__FILE__) . "/includes/utilities.inc";
 
 /**
  * Implements hook_requirements().
@@ -15,7 +15,6 @@ function selenium_requirements() {
   $url = variable_get('selenium_server_host', 'localhost:4444');
 
   // Check the server response.
-  module_load_include('inc', 'selenium', 'includes/utilities');
   $response = selenium_get_server_status($url);
   // If the server doesn't respond or return JSON.
   if (!$response || $response === NULL) {
@@ -53,7 +52,6 @@ function selenium_requirements() {
   // Check the status of the default browsers.
   $browsers = explode(', ', variable_get('selenium_allowed_browsers', 'firefox, chrome'));
   $browser_requirements = array();
-  module_load_include('inc', 'selenium', 'includes/utilities');
   foreach ($browsers as $browser) {
     $status = selenium_check_browser_status($browser);
     $browser_requirements[$browser]['title'] = $t('Selenium !browser Browser Status', array('!browser' => ucfirst($browser)));
