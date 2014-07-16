@@ -26,4 +26,4 @@ before_install:
   - ln -s $TRAVIS_BUILD_DIR sites/all/modules/drupal_selenium
   - drush -y -u 1 en selenium
 script:
-  - drush --uri=http://localhost:8081 test-run "Drupal Selenium Integration"
+  # - drush --uri=http://localhost:8081 test-run "Drupal Selenium Integration"
