@@ -120,7 +120,7 @@ class SeleniumChromeDriver extends SeleniumWebDriver {
     }
     // If we didn't get any of that, we need to generate an exception.
     else {
-      $message = "Did not get a session id from " . $this->SELENIUM_SERVER_URL . "\n";
+      $message = "Did not get a session id from " . SELENIUM_SERVER_URL . "\n";
       if (!empty($response['body'])) {
         $message .= $response['body'];
       }

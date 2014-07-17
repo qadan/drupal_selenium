@@ -44,9 +44,9 @@ class SampleSeleniumTestCase extends DrupalSeleniumWebTestCase {
     );
     $this->postUrl('/node/add/article', $edit, 'Save');
 
-    $this->assertUrl('/node/1');
+    $this->assertUrl('node/1');
     $this->assertFieldById('page-title', $title);
-    $this->assertTitle("$body | " . variable_get('site_name'));
+    $this->assertTitle("$title | Drupal");
   }
 
   /**

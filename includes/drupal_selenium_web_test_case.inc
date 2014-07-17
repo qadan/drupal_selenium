@@ -655,7 +655,7 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
       $message = $message ? $message : t('Option @option for field @id is selected.', array('@option' => $option, '@id' => $id));
       $selected_options = $this->getSelectedElement($element);
       foreach ($selected_options as $selected_option) {
-        if ($this->getElementValue($selected_option) == $option) {
+        if ($this->getElementText($selected_option) == $option) {
           $selected = TRUE;
           break;
         }
@@ -696,7 +696,7 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
       $message = $message ? $message : t('Option @option for field @id is not selected.', array('@option' => $option, '@id' => $id));
       $selected_options = $this->getSelectedElement($element);
       foreach ($selected_options as $selected_option) {
-        if ($this->getElementValue($selected_option) == $option) {
+        if ($this->getElementText($selected_option) == $option) {
           $selected = TRUE;
           break;
         }
@@ -933,19 +933,12 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
   protected function elementValue($element, $value) {
     $element_text = NULL;
     $element_value = NULL;
-    switch ($this->getElementTagName($element)) {
-      case 'input':
-        $element_value = $this->getElementValue($element);
-        break;
-
-      case 'textarea':
-        $element_value = $this->getElementText($element);
-        break;
-
-      case 'select':
-        $element_value = $this->getElementValue($this->getElementSelectedOption($element));
-        $element_text = $this->getElementText($this->getElementSelectedOption($element));
-        break;
+    if ($this->getElementTagName($element) == 'select') {
+      $element_value = $this->getElementAttributeValue($this->getElementSelectedOption($element), 'value');
+      $element_text = $this->getElementText($this->getElementSelectedOption($element));
+    }
+    else {
+      $element_value = trim($this->getElementText($element));
     }
     return $value == $element_value || $value == $element_text;
   }
@@ -1051,7 +1044,7 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
         case 'radio':
           $elements = $this->getAllElements("name=$selector");
           foreach ($elements as $element) {
-            if ($this->getElementValue($element) == $value) {
+            if ($this->getElementAttributeValue($element, 'value') == $value) {
               $this->clickElement($element);
             }
           }
@@ -1063,7 +1056,7 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
             $value = array($value);
           }
           foreach ($elements as $element) {
-            $element_value = $this->getElementValue($element);
+            $element_value = $this->getElementAttributeValue($element, 'value');
             $element_selected = $this->isElementSelected($element);
             // Click on element if it should be selected but isn't or if element
             // shouldn't be selected but it is.
@@ -2032,10 +2025,16 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    * @param null|string $attribute
    *   An attribute to pull from the JSON value array; use NULL for none.
    *
-   * @return mixed|bool
-   *   The result from the response, or FALSE on failure.
+   * @return mixed|bool|null
+   *   The result from the response, or FALSE on failure. NULL if the element
+   *   passed in was invalid.
    */
   protected function elementGetterHelper(SeleniumWebElement $element, $path, $message, $http_method = 'GET', $variables = NULL, $attribute = NULL) {
+    if (!($element instanceof SeleniumWebElement)) {
+      // If the element passed in was invalid, the message saying so has
+      // already been passed through, and we don't need to take orders.
+      return NULL;
+    }
     try {
       $response = $element->execute($http_method, $path, $variables);
       $result = $this->driver->getJSONValue($response, $attribute);
@@ -2309,10 +2308,15 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    * @param string $http_method
    *   The HTTP method to use; defaults to POST.
    *
-   * @return bool
-   *   TRUE on success, or FALSE on failure.
+   * @return bool|null
+   *   TRUE on success, or FALSE on failure. NULL if the element passed in was
+   *   invalid.
    */
   protected function elementSetterHelper(SeleniumWebElement $element, $path, $message, $variables = NULL, $http_method = 'POST') {
+    if (!($element instanceof SeleniumWebElement)) {
+      // In this case, we just skip doing anything with the element.
+      return NULL;
+    }
     try {
       $element->execute($http_method, $path, $variables);
     }

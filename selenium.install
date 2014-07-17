@@ -29,6 +29,7 @@ function selenium_requirements() {
     if ($response['status'] === 0) {
       $server_value = $t("Successfully connected at !location.", array('!location' => $url));
       $server_severity = REQUIREMENT_OK;
+      $server_description = NULL;
     }
     // If the server returns JSON, but the status isn't 0.
     elseif ($response['status'] !== 0) {
@@ -83,6 +84,18 @@ function selenium_requirements() {
       'description' => isset($browser['description']) ? $browser['description'] : NULL,
       'value' => $browser['value'],
       'severity' => $browser['severity'],
+    );
+  }
+
+  // If Chrome is set as a browser, check for the ChromeDriver.
+  if (in_array('chrome', $browsers)) {
+    $path = exec("which chromedriver");
+    $chromedriver_exists = is_executable($path);
+    $results[] = array(
+      'title' => $t("Selenium ChromeDriver"),
+      'description' => $chromedriver_exists ? NULL : $t('Chrome is set as a valid browser, but the ChromeDriver executable could not be found. To use Chrome with tests, the <a href="https://code.google.com/p/selenium/wiki/ChromeDriver">ChromeDriver</a> should be executable from $PATH; otherwise, it should be removed from the <a href="/admin/config/development/testing/settings">list of allowed browsers</a>.'),
+      'value' => $chromedriver_exists ? $t('Executable found') : $t('Unable to find ChromeDriver executable'),
+      'severity' => $chromedriver_exists ? REQUIREMENT_OK : REQUIREMENT_WARNING,
     );
   }
   return $results;
