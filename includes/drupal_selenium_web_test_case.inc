@@ -1391,7 +1391,7 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    */
   public function getElement($locator) {
     $variables = $this->driver->parseLocator($locator);
-    $element_id = $this->getterHelper('/session/:sessionId/element', "Failed to get element from locator $locator", 'POST', $variables, 'ELEMENT');
+    $element_id = $this->getterHelper('/session/:sessionId/element', "Got element from locator $locator", 'POST', $variables, 'ELEMENT');
     if ($element_id !== FALSE) {
       module_load_include('inc', 'selenium', 'includes/selenium_web_element');
       return new SeleniumWebElement($this->driver, $element_id, $locator);
@@ -1478,7 +1478,7 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    */
   public function getAllElements($locator) {
     $variables = $this->driver->parseLocator($locator);
-    $element_ids = $this->getterHelper('/session/:sessionId/elements', "Failed to find elements from locator $locator", 'POST', $variables, 'ELEMENT');
+    $element_ids = $this->getterHelper('/session/:sessionId/elements', "Found elements using locator $locator", 'POST', $variables, 'ELEMENT');
     if ($element_ids !== FALSE) {
       $elements = array();
       module_load_include('inc', 'selenium', 'includes/selenium_web_element');
@@ -1501,7 +1501,7 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    * @see http://code.google.com/p/selenium/wiki/JsonWireProtocol#/session/:sessionId/element/active
    */
   public function getActiveElement() {
-    $element_id = $this->getterHelper('/session/:sessionId/element/active', 'Failed to get the active element', 'POST', NULL, 'ELEMENT');
+    $element_id = $this->getterHelper('/session/:sessionId/element/active', 'Got the active element', 'POST', NULL, 'ELEMENT');
     if ($element_id !== FALSE) {
       module_load_include('inc', 'selenium', 'includes/selenium_web_element');
       return new SeleniumWebElement($this->driver, $element_id, "active=true");
@@ -1518,7 +1518,7 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    * @see http://code.google.com/p/selenium/wiki/JsonWireProtocol#/session/:sessionId/window_handle
    */
   public function getWindowHandle() {
-    return $this->getterHelper('/session/:sessionId/window_handle', 'Failed to get the current window handle');
+    return $this->getterHelper('/session/:sessionId/window_handle', 'Got the current window handle');
   }
 
   /**
@@ -1530,7 +1530,7 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    * @see http://code.google.com/p/selenium/wiki/JsonWireProtocol#/session/:sessionId/window_handles
    */
   public function getAllWindowHandles() {
-    return $this->getterHelper('/session/:sessionId/window_handles', 'Failed to get all window handles');
+    return $this->getterHelper('/session/:sessionId/window_handles', 'Got all window handles');
   }
 
   /**
@@ -1542,7 +1542,7 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    * @see http://code.google.com/p/selenium/wiki/JsonWireProtocol#/session/:sessionId/cookie
    */
   public function getAllCookies() {
-    return $this->getterHelper('/session/:sessionId/cookie', 'Failed to get all cookies');
+    return $this->getterHelper('/session/:sessionId/cookie', 'Got all cookies');
   }
 
   /**
