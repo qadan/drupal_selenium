@@ -108,6 +108,7 @@ function selenium_install() {
   // Initially set the defaults, so we can use them in our checks.
   variable_set('selenium_server_host', 'localhost:4444');
   variable_set('selenium_allowed_browsers', 'firefox, chrome');
+  variable_set('selenium_capture_method', 'html');
 }
 
 /**
@@ -116,4 +117,5 @@ function selenium_install() {
 function selenium_uninstall() {
   variable_del('selenium_server_host');
   variable_del('selenium_allowed_browsers');
+  variable_del('selenium_capture_method');
 }

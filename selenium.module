@@ -54,6 +54,23 @@ function selenium_form_simpletest_settings_form_alter(&$form, &$form_state) {
     '#description' => t("When enabled, this allows tests to pass back verbose results from Selenium WebDriver functions that were run successfully, but which are otherwise not necessarily useful to know about beyond debugging purposes."),
     '#default_value' => variable_get('selenium_verbose_logging', FALSE),
   );
+  $capture_options = array(
+    'none' => t('None'),
+    'html' => t('HTML'),
+    'screenshot' => t('Screenshot (.png)'),
+  );
+  $form['selenium']['selenium_capture_method'] = array(
+    '#type' => 'radios',
+    '#title' => t('Selenium Page Capture Method'),
+    '#description' => t('Sets the method Selenium should use to capture the page contents.'),
+    '#options' => $capture_options,
+    '#default_value' => variable_get('selenium_capture_method', 'html'),
+    '#states' => array(
+      'invisible' => array(
+        ':input[name="simpletest_verbose"]' => array('checked' => FALSE),
+      ),
+    ),
+  );
 }
 
 /**

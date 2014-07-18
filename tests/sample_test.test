@@ -55,18 +55,19 @@ class SampleSeleniumTestCase extends DrupalSeleniumWebTestCase {
   public function testManualPost() {
     $user = $this->drupalCreateUser(array_keys(module_invoke_all('permission')));
     $this->drupalLogin($user);
+    $this->openUrl('/node/add/article');
 
     $title = $this->randomName();
     $body = $this->randomString();
 
-    $this->sendKeysToElement($this->getElement('id=edit-title'), $title);
-    $this->sendKeysToElement($this->getElement('id=edit-body-und-0-value'), $body);
-    $this->clickElement($this->getElement('id=edit-submit'));
+    $this->sendKeysToElement($this->getElement('name=edit-title'), $title);
+    $this->sendKeysToElement($this->getElement('name=edit-body-und-0-value'), $body);
+    $this->clickElement($this->getElement('name=edit-submit'));
 
     $this->waitForElements('css=body');
 
-    $this->assertUrl('/node/1');
+    $this->assertUrl('node/1');
     $this->assertFieldById('page-title', $title);
-    $this->assertTitle("$body | " . variable_get('site_name'));
+    $this->assertTitle('$title | Drupal');
   }
 }

@@ -231,7 +231,12 @@ class SeleniumWebDriver {
     }
     // Throw an exception if the value array is missing.
     if (!isset($array["value"])) {
-      throw new Exception("JSON had no value\n" . print_r($array, TRUE));
+      if (is_null($array['value'])) {
+        $array['value'] = array();
+      }
+      else {
+        throw new Exception("JSON had no value array.");
+      }
     }
 
     // If $attribute is null, just return the whole value array.

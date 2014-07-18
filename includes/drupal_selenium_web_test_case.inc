@@ -366,6 +366,23 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
     }
   }
 
+  protected function appendVerboseMessage() {
+    if (variable_get('simpletest_verbose', 1)) {
+      switch ($variable_get('selenium_capture_method', 'html') {
+        case 'none':
+          break;
+
+        case 'html':
+          $this->verbosePageContents();
+          break;
+
+        case 'screenshot':
+          $this->verboseScreenshot();
+          break;
+      }
+    }
+  }
+
   /**
    * Takes a screenshot from current page.
    *
@@ -392,6 +409,25 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
         // Adding verbose message with link to screenshot.
         $this->error(l(t('Screenshot created.'), $GLOBALS['base_url'] . '/' . $file, array('attributes' => array('target' => '_blank'))), 'User notice');
       }
+    }
+  }
+
+
+  /**
+   * Adds the page contents to the verbose test results.
+   *
+   * Saves it to the verbose directory and adds a verbose message.
+   */
+  protected function verbosePageContents() {
+    $page_contents = $this->getSource();
+    if ($page_contents) {
+      $testname = $this->getTestName();
+      $directory = $this->originalFileDirectory . "/simpletest/verbose";
+      $writable = file_prepare_directory($directory, FILE_CREATE_DIRECTORY);
+      if ($writable) {
+        $file = file_unmanaged_save_data($page_contents, $this->originalFileDirectory . '/simpletest/verbose/' . $testname . '.html', FILE_EXISTS_RENAME);
+      }
+      $this->error(l(t('Verbose page content'), $GLOBALS['base_url'] . '/' . $file, array('attributes' => array('target' => '_blank'))), 'User notice');
     }
   }
 
@@ -1082,13 +1118,14 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
 
     // Wait for the page to load.
     $this->waitForElements('css=body');
+    $this->appendVerboseMessage();
   }
 
   /**
    * Injects javascript code to disable work of some of the drupal javascripts.
    *
    * For example, vertical tabs hide some elements on a form. This leads to
-   * situations where Selenium can't access tthe hidden fields. So, if we used
+   * situations where Selenium can't access the hidden fields. So, if we used
    * the postUrl method with these hidden elements, we would not be able to
    * submit the form properly.
    *
@@ -1602,7 +1639,10 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
       $full_url = url($url, array('absolute' => TRUE));
     }
     $variables = array("url" => $full_url);
-    return $this->setterHelper('/session/:sessionId/url', "Opened URL: $url", $variables);
+    $response = $this->setterHelper('/session/:sessionId/url', "Opened URL: $url", $variables);
+    $this->waitForElements('css=body');
+    $this->appendVerboseMessage();
+    return $response;
   }
 
   /**
