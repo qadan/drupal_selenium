@@ -67,7 +67,7 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    */
   protected function setUp() {
     // Set what type of verbose capture method to use, if any.
-    if (variable_get('simpletest_verbose', 1) == 1) {
+    if (variable_get('simpletest_verbose', TRUE) == TRUE) {
       $this->captureType = variable_get('selenium_capture_method', 'html');
     }
 
