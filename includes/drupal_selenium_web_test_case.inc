@@ -66,6 +66,15 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    * @see DrupalWebTestCase::setUp()
    */
   protected function setUp() {
+    // Set what type of verbose capture method to use, if any.
+    if (variable_get('simpletest_verbose', 1) == 1) {
+      $this->captureType = variable_get('selenium_capture_method', 'html');
+    }
+
+    // Set allowed browsers before we set up the test.
+    $allowed_browsers = variable_get('selenium_allowed_browsers', 'firefox, chrome');
+    $allowed_browsers = explode(', ', $allowed_browsers);
+
     // Use the parent setUp() function to enable any required modules.
     $modules = func_get_args();
     if (isset($modules[0]) && is_array($modules[0])) {
@@ -79,19 +88,12 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
     // Determine what browser to run. Also determine if we are allowed to use
     // the browser in question. Firefox is run when no other browser is present.
     $browser = 'firefox';
-    $allowed_browsers = variable_get('selenium_allowed_browsers', 'firefox, chrome');
-    $allowed_browsers = explode(', ', $allowed_browsers);
     if (in_array($this->browser, $allowed_browsers)) {
       $browser = $this->browser;
     }
 
     // Instantiate the driver.
     $this->driver = $this->seleniumDriver($browser);
-
-    // Set what type of verbose capture method to use, if any.
-    if (variable_get('simpletest_verbose', 1) == 1) {
-      $this->captureType = variable_get('selenium_capture_method', 'html');
-    }
 
     // Determine whether to run in the sandbox or on the original site.
     if ($this->onOriginal) {
