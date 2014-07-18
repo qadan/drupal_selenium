@@ -54,6 +54,13 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
   protected $verbose = FALSE;
 
   /**
+   * The capture type set for verbose logging.
+   *
+   * @var string
+   */
+  protected $captureType = 'none';
+
+  /**
    * Sets up the test.
    *
    * @see DrupalWebTestCase::setUp()
@@ -64,9 +71,11 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
     if (isset($modules[0]) && is_array($modules[0])) {
       $modules = $modules[0];
     }
+
     // Always use this module.
     $modules[] = 'selenium';
     parent::setUp($modules);
+
     // Determine what browser to run. Also determine if we are allowed to use
     // the browser in question. Firefox is run when no other browser is present.
     $browser = 'firefox';
@@ -75,7 +84,15 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
     if (in_array($this->browser, $allowed_browsers)) {
       $browser = $this->browser;
     }
+
+    // Instantiate the driver.
     $this->driver = $this->seleniumDriver($browser);
+
+    // Set what type of verbose capture method to use, if any.
+    if (variable_get('simpletest_verbose', 1) == 1) {
+      $this->captureType = variable_get('selenium_capture_method', 'html');
+    }
+
     // Determine whether to run in the sandbox or on the original site.
     if ($this->onOriginal) {
       // Make the database switch.
@@ -366,20 +383,21 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
     }
   }
 
+  /**
+   * Appends a verbose message to the test result, depending on the type set.
+   */
   protected function appendVerboseMessage() {
-    if (variable_get('simpletest_verbose', 1)) {
-      switch (variable_get('selenium_capture_method', 'html')) {
-        case 'none':
-          break;
+    switch ($this->captureType) {
+      case 'none':
+        break;
 
-        case 'html':
-          $this->verbosePageContents();
-          break;
+      case 'html':
+        $this->verbosePageContents();
+        break;
 
-        case 'screenshot':
-          $this->verboseScreenshot();
-          break;
-      }
+      case 'screenshot':
+        $this->verboseScreenshot();
+        break;
     }
   }
 
@@ -1117,7 +1135,7 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
   /**
    * Clicks on a submit button with the given label.
    *
-   * @param string $label
+   * @param string $value
    *   The label of the submit button.
    *
    * @return bool
@@ -1136,7 +1154,7 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
         return TRUE;
       }
     }
-    $this->fail("No submit button element found on the page with label $label.", 'Selenium WebDriver');
+    $this->fail("No submit button element found on the page with label $value.", 'Selenium WebDriver');
     return FALSE;
   }
 
