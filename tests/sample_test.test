@@ -60,14 +60,14 @@ class SampleSeleniumTestCase extends DrupalSeleniumWebTestCase {
     $title = $this->randomName();
     $body = $this->randomString();
 
-    $this->sendKeysToElement($this->getElement('name=edit-title'), $title);
-    $this->sendKeysToElement($this->getElement('name=edit-body-und-0-value'), $body);
-    $this->clickElement($this->getElement('name=edit-submit'));
+    $this->sendKeysToElement($this->getElement('name=title'), $title);
+    $this->sendKeysToElement($this->getElement('name=body[und][0][value]'), $body);
+    $this->clickSubmitButton('Save');
 
     $this->waitForElements('css=body');
 
     $this->assertUrl('node/1');
     $this->assertFieldById('page-title', $title);
-    $this->assertTitle('$title | Drupal');
+    $this->assertTitle("$title | Drupal");
   }
 }

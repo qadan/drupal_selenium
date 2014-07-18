@@ -368,7 +368,7 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
 
   protected function appendVerboseMessage() {
     if (variable_get('simpletest_verbose', 1)) {
-      switch ($variable_get('selenium_capture_method', 'html') {
+      switch (variable_get('selenium_capture_method', 'html')) {
         case 'none':
           break;
 
@@ -1107,18 +1107,37 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
     }
 
     // Find button and submit the form.
-    $elements = $this->getAllElements("name=op");
-    foreach ($elements as $element) {
-      $val = $this->getElementValue($element);
-      if ($val == $submit) {
-        $this->submitElement($element);
-        break;
-      }
-    }
+    $this->clickSubmitButton($submit);
 
     // Wait for the page to load.
     $this->waitForElements('css=body');
     $this->appendVerboseMessage();
+  }
+
+  /**
+   * Clicks on a submit button with the given label.
+   *
+   * @param string $label
+   *   The label of the submit button.
+   *
+   * @return bool
+   *   TRUE if the button is found and clicked, or FALSE if it isn't.
+   */
+  public function clickSubmitButton($value) {
+    $elements = $this->getAllElements('name=op');
+    if (empty($elements)) {
+      $this->fail('No submit button elements found on page.', 'Selenium WebDriver');
+      return FALSE;
+    }
+    foreach ($elements as $element) {
+      $val = $this->getElementValue($element);
+      if ($val == $value) {
+        $this->submitElement($element);
+        return TRUE;
+      }
+    }
+    $this->fail("No submit button element found on the page with label $label.", 'Selenium WebDriver');
+    return FALSE;
   }
 
   /**

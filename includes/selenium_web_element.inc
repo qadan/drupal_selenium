@@ -111,6 +111,17 @@ class SeleniumWebElement {
   }
 
   /**
+   * Returns the $locator property.
+   */
+  public function getLocatorParts() {
+    $parts = explode("=", $this->locator);
+    return array(
+      'attribute' => $parts[0],
+      'value' => $parts[1],
+    );
+  }
+
+  /**
    * Executes a driver command from within the context of this element.
    *
    * @param string $http_type
