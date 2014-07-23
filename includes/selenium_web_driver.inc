@@ -25,9 +25,8 @@ class SeleniumWebDriver {
 
   /**
    * Associative array of status codes that the server can pass back.
-   * @var array
    */
-  public static $statusCodes = array(
+  const STATUS_CODES = array(
     0 => array("Success", " The command executed successfully."),
     7 => array("NoSuchElement", " An element could not be located on the page using the given search parameters."),
     8 => array("NoSuchFrame", " A request to switch to a frame could not be satisfied because the frame could not be found."),

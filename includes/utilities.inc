@@ -36,7 +36,7 @@ function selenium_get_status_message($url) {
   // If the status wasn't 0, we have a problem.
   if ($status !== 0) {
     module_load_include('inc', 'selenium', 'includes/selenium_web_driver');
-    $status_codes = SeleniumWebDriver::$statusCodes;
+    $status_codes = SeleniumWebDriver::STATUS_CODES;
     $message = theme_image(array('path' => 'misc/watchdog-error.png', 'attributes' => array()));
     if (isset($status_codes[$status])) {
       $message .= t("Error !error_number encountered while trying to access the Selenium server !version at !selenium_url: !error", array(

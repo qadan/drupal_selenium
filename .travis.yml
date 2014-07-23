@@ -26,4 +26,7 @@ before_install:
   - ln -s $TRAVIS_BUILD_DIR sites/all/modules/drupal_selenium
   - drush -y -u 1 en selenium
 script:
+  - $ISLANDORA_DIR/tests/scripts/line_endings.sh sites/all/modules/selenium
+  - drush coder-review --reviews=production,security,style,i18n,potx,sniffer selenium
+  - phpcpd --names *.module,*.inc,*.test sites/all/modules/selenium
   # - drush --uri=http://localhost:8081 test-run "Drupal Selenium Integration"

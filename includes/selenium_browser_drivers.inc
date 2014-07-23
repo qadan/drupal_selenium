@@ -92,15 +92,18 @@ class SeleniumChromeDriver extends SeleniumWebDriver {
    *   If the session can't be generated.
    */
   public function __construct($user_agent) {
-    // Generate an appropriate user agent string.
-    $user_agent_string = '--user-agent=' . $user_agent;
-
     // Start the browser with an appropriate set of capabilities.
     $capabilities = array(
       'browserName' => 'chrome',
       'javascriptEnabled' => TRUE,
       'platform' => 'ANY',
-      'chrome.switches' => array($user_agent_string),
+      'chromeOptions' => array(
+        'args' => array(
+          'start-maximized',
+          'window-size=1024,768',
+          "user-agent=$user_agent",
+        ),
+      ),
     );
     $variables = array("desiredCapabilities" => $capabilities);
     $response = $this->execute("POST", "/session", $variables);
@@ -110,13 +113,13 @@ class SeleniumChromeDriver extends SeleniumWebDriver {
       $this->sessionResponse = json_decode($response['body'], TRUE);
     }
 
-    // We add a new line character to the header, as the ChromeDriver doesn't
-    // have one.
-    $response['header'] .= "\n";
-    // Parse out the session ID.
-    preg_match("/\n[Ll]ocation:.*\/(.*)\n/", $response['header'], $matches);
-    if (count($matches) > 0) {
-      $this->sessionId = trim($matches[1]);
+    // Store the session response, and parse out the session ID for storage as
+    // well.
+    if (isset($response['body'])) {
+      $this->sessionResponse = json_decode($response['body'], TRUE);
+      if (isset($this->sessionResponse['sessionId'])) {
+        $this->sessionId = $this->sessionResponse['sessionId'];
+      }
     }
     // If we didn't get any of that, we need to generate an exception.
     else {

@@ -190,7 +190,10 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
     if (!$response || $response === NULL) {
       $caller = array(
         'file' => 'drupal_selenium_web_test_case.inc',
-        'line' => __LINE__ - 4,
+        // Coder thinks this uses unary operators and it's driving me nuts.
+        // @codingStandardsIgnoreStart
+        'line' => __LINE__ - 6,
+        // @codingStandardsIgnoreEnd
         'function' => 'DrupalSeleniumWebTestCase->run()',
       );
       DrupalTestCase::insertAssert($this->testId, get_class($this), FALSE, t("Unable to complete Selenium tests as a connection to the server could not be established.", 'Completion check', $caller));
@@ -200,7 +203,9 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
       $status_codes = SeleniumWebDriver::$statusCodes;
       $caller = array(
         'file' => 'drupal_selenium_web_test_case.inc',
-        'line' => __LINE__ - 13,
+        // @codingStandardsIgnoreStart
+        'line' => __LINE__ - 18,
+        // @codingStandardsIgnoreEnd
         'function' => 'DrupalSeleniumWebTestCase->run()',
       );
       DrupalTestCase::insertAssert($this->testId, get_class($this), FALSE, t("Unable to complete Selenium tests as the server returned a non-zero status of !status (!message).", array(
@@ -326,6 +331,7 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
 
     // Load the appropriate driver.
     module_load_include('inc', 'selenium', 'includes/selenium_browser_drivers');
+    $this->pass("Instantiated new Selenium session with browserName: $browser.", 'Selenium WebDriver');
     switch ($browser) {
       case 'firefox':
         return new SeleniumFirefoxDriver($user_agent, $test_id);
@@ -341,7 +347,7 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
   /**
    * Log in a user using the interface.
    *
-   * @param stdClass $account
+   * @param object $account
    *   The user account to log in with.
    */
   protected function drupalLogin(stdClass $account) {
@@ -1033,16 +1039,7 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    * @param string $path
    *   Location of the post form. Either a Drupal path or an absolute path or
    *   NULL to post to the current page. For multi-stage forms you can set the
-   *   path to NULL and have it post to the last received page. Example:   *
-   * @code
-   *   // First step in form.
-   *   $edit = array(...);
-   *   $this->formSubmit('some_url', $edit, t('Save'));
-   *
-   *   // Second step in form.
-   *   $edit = array(...);
-   *   $this->formSubmit(NULL, $edit, t('Save'));
-   * @endcode
+   *   path to NULL and have it post to the last received page.
    * @param array $edit
    *   Field data in an associative array. Changes the current input fields
    *   (where possible) to the values indicated. A checkbox can be set to
@@ -1051,11 +1048,7 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    *   character.
    *
    *   Multiple select fields can be set using name[] and setting each of the
-   *   possible values. Example:
-   * @code
-   *   $edit = array();
-   *   $edit['name[]'] = array('value1', 'value2');
-   * @endcode
+   *   possible values.
    * @param string $submit
    *   Value of the submit button whose click is to be emulated. For example,
    *   t('Save'). The processing of the request depends on this value. For
@@ -1414,13 +1407,14 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    */
   public function waitForElements($locator, $seconds = 10) {
     $elements = NULL;
+    $max_seconds = $seconds;
     while ($seconds > 0 && empty($elements)) {
       $elements = $this->getAllElements($locator);
       sleep(1);
       $seconds--;
     }
     if (empty($seconds)) {
-      $this->fail("Failed to find any elements within $seconds seconds using locator $locator.", "Selenium WebDriver");
+      $this->fail("Failed to find any elements within $max_seconds seconds using locator $locator.", "Selenium WebDriver");
       return FALSE;
     }
     else {
@@ -2110,7 +2104,7 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    *   The result from the response, or FALSE on failure. NULL if the element
    *   passed in was invalid.
    */
-  protected function elementGetterHelper(SeleniumWebElement $element, $path, $message, $http_method = 'GET', $variables = NULL, $attribute = NULL) {
+  protected function elementGetterHelper($element, $path, $message, $http_method = 'GET', $variables = NULL, $attribute = NULL) {
     if (!($element instanceof SeleniumWebElement)) {
       // If the element passed in was invalid, the message saying so has
       // already been passed through, and we don't need to take orders.
@@ -2143,7 +2137,7 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    *
    * @see http://code.google.com/p/selenium/wiki/JsonWireProtocol#/session/:sessionId/element/:id
    */
-  public function describeElement(SeleniumWebElement $element) {
+  public function describeElement($element) {
     return $this->elementGetterHelper($element, '', "Described element (%element%)");
   }
 
@@ -2158,7 +2152,7 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    *
    * @see http://code.google.com/p/selenium/wiki/JsonWireProtocol#/session/:sessionId/element/:id/text
    */
-  public function getElementText(SeleniumWebElement $element) {
+  public function getElementText($element) {
     return $this->elementGetterHelper($element, '/text', "Got text for element (%element%)");
   }
 
@@ -2173,7 +2167,7 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    *
    * @see http://code.google.com/p/selenium/wiki/JsonWireProtocol#/session/:sessionId/element/:id/value
    */
-  public function getElementValue(SeleniumWebElement $element) {
+  public function getElementValue($element) {
     return $this->elementGetterHelper($element, '/attribute/value', "Got the value of element (%element%)");
   }
 
@@ -2188,7 +2182,7 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    *
    * @see http://code.google.com/p/selenium/wiki/JsonWireProtocol#/session/:sessionId/element/:id/displayed
    */
-  public function isElementDisplayed(SeleniumWebElement $element) {
+  public function isElementDisplayed($element) {
     return $this->elementGetterHelper($element, '/displayed', "Checked if element (%element%) was displayed");
   }
 
@@ -2203,7 +2197,7 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    *
    * @see http://code.google.com/p/selenium/wiki/JsonWireProtocol#/session/:sessionId/element/:id/enabled
    */
-  public function isElementEnabled(SeleniumWebElement $element) {
+  public function isElementEnabled($element) {
     return $this->elementGetterHelper($element, '/enabled', "Checked if element (%element%) was enabled");
   }
 
@@ -2218,7 +2212,7 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    *
    * @see http://code.google.com/p/selenium/wiki/JsonWireProtocol#/session/:sessionId/element/:id/selected
    */
-  public function isElementSelected(SeleniumWebElement $element) {
+  public function isElementSelected($element) {
     return $this->elementGetterHelper($element, '/selected', "Checked if element (%element%) was selected");
   }
 
@@ -2238,7 +2232,7 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    *
    * @see http://code.google.com/p/selenium/wiki/JsonWireProtocol#/session/:sessionId/element/:id/element
    */
-  public function getNextElement(SeleniumWebElement $element, $locator) {
+  public function getNextElement($element, $locator) {
     $variables = $this->driver->ParseLocator($locator);
     $next_element_id = $this->elementGetterHelper($element, '/element', "Got next element from element (%element%)", 'POST', $variables, 'ELEMENT');
     return new SeleniumWebElement($this->driver, $next_element_id, $locator);
@@ -2260,7 +2254,7 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    *
    * @see http://code.google.com/p/selenium/wiki/JsonWireProtocol#/session/:sessionId/element/:id/elements
    */
-  public function getAllNextElements(SeleniumWebElement $element, $locator) {
+  public function getAllNextElements($element, $locator) {
     $variables = $this->driver->ParseLocator($locator);
     $next_element_ids = $this->elementGetterHelper($element, '/elements', "Got all next elements from element (%element%)", 'POST', $variables, 'ELEMENT');
     $all_elements = array();
@@ -2281,7 +2275,7 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    *
    * @see http://code.google.com/p/selenium/wiki/JsonWireProtocol#/session/:sessionId/element/:id/name
    */
-  public function getElementTagName(SeleniumWebElement $element) {
+  public function getElementTagName($element) {
     return $this->elementGetterHelper($element, '/name', "Queried the tag name of element (%element%)");
   }
 
@@ -2298,7 +2292,7 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    *
    * @see http://code.google.com/p/selenium/wiki/JsonWireProtocol#/session/:sessionId/element/:id/attribute/:name
    */
-  public function getElementAttributeValue(SeleniumWebElement $element, $attribute_name) {
+  public function getElementAttributeValue($element, $attribute_name) {
     return $this->elementGetterHelper($element, "/attribute/$attribute_name", "Got the value of attribute $attribute_name for element (%element%)");
   }
 
@@ -2315,7 +2309,7 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    *
    * @see http://code.google.com/p/selenium/wiki/JsonWireProtocol#/session/:sessionId/element/:id/equals/:other
    */
-  public function elementIsSameElementAs(SeleniumWebElement $element, $other_element_id) {
+  public function elementIsSameElementAs($element, $other_element_id) {
     return $this->elementGetterHelper($element, "/equals/$other_element_id", "Compared element (%element%) to element with ID $other_element_id");
   }
 
@@ -2333,7 +2327,7 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    *
    * @see http://code.google.com/p/selenium/wiki/JsonWireProtocol#/session/:sessionId/element/:id/location
    */
-  public function getElementLocation(SeleniumWebElement $element) {
+  public function getElementLocation($element) {
     return $this->elementGetterHelper($element, '/location', "Got the location of element (%element%)");
   }
 
@@ -2348,7 +2342,7 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    *
    * @see http://code.google.com/p/selenium/wiki/JsonWireProtocol#/session/:sessionId/element/:id/size
    */
-  public function getElementSize(SeleniumWebElement $element) {
+  public function getElementSize($element) {
     return $this->elementGetterHelper($element, '/size', "Got the size of element (%element%)");
   }
 
@@ -2369,7 +2363,7 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    *
    * @see http://code.google.com/p/selenium/wiki/JsonWireProtocol#/session/:sessionId/element/:id/css/:propertyName
    */
-  public function getElementCSSProperty(SeleniumWebElement $element, $property_name) {
+  public function getElementCSSProperty($element, $property_name) {
     return $this->elementGetterHelper($element, "/css/$property_name", "Got the value of the CSS property $property_name for element (%element%)");
   }
 
@@ -2395,7 +2389,7 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    *   TRUE on success, or FALSE on failure. NULL if the element passed in was
    *   invalid.
    */
-  protected function elementSetterHelper(SeleniumWebElement $element, $path, $message, $variables = NULL, $http_method = 'POST') {
+  protected function elementSetterHelper($element, $path, $message, $variables = NULL, $http_method = 'POST') {
     if (!($element instanceof SeleniumWebElement)) {
       // In this case, we just skip doing anything with the element.
       return NULL;
@@ -2427,7 +2421,7 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    *
    * @see http://code.google.com/p/selenium/wiki/JsonWireProtocol#/session/:sessionId/element/:id/submit
    */
-  public function submitElement(SeleniumWebElement $element) {
+  public function submitElement($element) {
     return $this->elementSetterHelper($element, '/submit', "Submitted form from element (%element%)");
   }
 
@@ -2442,7 +2436,7 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    *
    * @see http://code.google.com/p/selenium/wiki/JsonWireProtocol#/session/:sessionId/element/:id/click
    */
-  public function clickElement(SeleniumWebElement $element) {
+  public function clickElement($element) {
     return $this->elementGetterHelper($element, '/click', "Clicked on element (%element%)");
   }
 
@@ -2457,7 +2451,7 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    *
    * @see http://code.google.com/p/selenium/wiki/JsonWireProtocol#/session/:sessionId/element/:id/clear
    */
-  public function clearElement(SeleniumWebElement $element) {
+  public function clearElement($element) {
     return $this->elementSetterHelper($element, '/clear', "Cleared element (%element%)");
   }
 
@@ -2472,7 +2466,7 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    *
    * @see http://code.google.com/p/selenium/wiki/JsonWireProtocol#/session/:sessionId/element/:id/selected
    */
-  public function selectElement(SeleniumWebElement $element) {
+  public function selectElement($element) {
     return $this->elementSetterHelper($element, '/selected', "Selected element (%element%)");
   }
 
@@ -2490,7 +2484,7 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    *
    * @see http://code.google.com/p/selenium/wiki/JsonWireProtocol#/session/:sessionId/element/:id/toggle
    */
-  public function toggleElement(SeleniumWebElement $element) {
+  public function toggleElement($element) {
     return $this->elementGetterHelper($element, '/toggle', "Toggled element (%element%)", 'POST');
   }
 
@@ -2507,7 +2501,7 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    *
    * @see http://code.google.com/p/selenium/wiki/JsonWireProtocol#/session/:sessionId/element/:id/value
    */
-  public function sendKeysToElement(SeleniumWebElement $element, $keys) {
+  public function sendKeysToElement($element, $keys) {
     $variables = array(
       "value" => preg_split('//u', $keys, -1, PREG_SPLIT_NO_EMPTY),
     );
@@ -2533,7 +2527,7 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    *
    * @see http://code.google.com/p/selenium/wiki/JsonWireProtocol#/session/:sessionId/element/:id/drag
    */
-  public function dragAndDropElement(SeleniumWebElement $element, $pixels_right, $pixels_down) {
+  public function dragAndDropElement($element, $pixels_right, $pixels_down) {
     $this->moveCursor(0, 0, $element);
     $this->mouseClickHold(0);
     $this->moveCursor($pixels_right, $pixels_down);
@@ -2555,7 +2549,7 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    * @return SeleniumWebElement
    *   A SeleniumWebElement JSON object for the located element.
    */
-  public function getElementSelectedOption(SeleniumWebElement $element) {
+  public function getElementSelectedOption($element) {
     try {
       // Does not work in IE8.
       return $this->getNextElement($element, "css=option[selected]");
@@ -2579,7 +2573,7 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    * @return SeleniumWebElement[]
    *   A list of SeleniumWebElement JSON objects for the located elements.
    */
-  public function getOptions(SeleniumWebElement $element) {
+  public function getOptions($element) {
     return $this->getAllNextElements($element, "tag name=option");
   }
 
@@ -2600,7 +2594,7 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    * @return bool
    *   TRUE on success, or FALSE on failure.
    */
-  public function selectElementOptionByLabel(SeleniumWebElement $element, $label) {
+  public function selectElementOptionByLabel($element, $label) {
     $option_element = $this->getNextElement($element, "xpath=//option[text()='$label']");
     return $this->selectElement($option_element);
   }
@@ -2618,7 +2612,7 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    * @return bool
    *   TRUE on success, or FALSE on failure.
    */
-  public function selectElementOptionByValue(SeleniumWebElement $element, $value) {
+  public function selectElementOptionByValue($element, $value) {
     $option_element = $this->getNextElement($element, "xpath=//option[@value='$value']");
     return $this->selectElement($option_element);
   }
@@ -2636,7 +2630,7 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    * @return bool
    *   TRUE on success, or FALSE on failure.
    */
-  public function selectElementOptionByIndex(SeleniumWebElement $element, $index) {
+  public function selectElementOptionByIndex($element, $index) {
     $option_element = $this->getNextElement($element, "xpath=//option[$index]");
     return $this->selectElement($option_element);
   }
