@@ -56,6 +56,8 @@ executeJsAsync|Execute an asynchronous JavaScript script.
 executeJsSync|Execute a synchronous JavaScript script.
 historyBack|Move backward in the browser history.
 historyForward|Move forward in the browser history.
+openUrl|Navigate to a URL.
+postUrl|Navigate to a URL, fill out data, and make a POST request.
 refresh|Refresh the current window.
 selectFrame|Select a given frame in the current window.
 selectParentFrame|Select the parent of the current frame.
@@ -114,6 +116,7 @@ Name|Description
 ----|-----------
 clearElement|Clear an element.
 clickElement|Click an element.
+clickLink|Click a link.
 dragAndDropElement|Drag and drop an element by an offset.
 selectElementOptionByIndex|Select a 'select'-type element option by its index.
 selectElementOptionByLabel|Select a 'select'-type element option by its label.
