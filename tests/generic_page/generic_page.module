@@ -8,20 +8,37 @@
  * Implements hook_menu().
  */
 function generic_page_menu() {
-  return array(
-    'generic_page' => array(
-      'title' => 'Generic Page',
-      'description' => 'A generic page for use during Selenium tests.',
-      'page callback' => 'generic_page_render_page',
-      'type' => MENU_NORMAL_ITEM,
-    ),
+  $items = array();
+  $items['generic_page'] = array(
+    'title' => 'Generic Page',
+    'description' => 'A generic page for use during Selenium tests.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('generic_page_form'),
+    'type' => MENU_NORMAL_ITEM,
+    'access callback' => TRUE,
+    'access arguments' => TRUE,
   );
+  return $items;
 }
 
 /**
- * Renders a generic page.
+ * The generic page form.
+ *
+ * @param array $form
+ *   The Drupal form definition.
+ * @param array $form_state
+ *   The Drupal form state.
+ *
+ * @return array
+ *   The Drupal form definition.
  */
-function generic_page_render_page(array $form, array &$form_state) {
+function generic_page_form(array $form, array &$form_state) {
+  $textfield = array(
+    '#type' => 'textfield',
+    '#title' => 'Text Field',
+    '#title_display' => 'invisible',
+    '#name' => 'text_field',
+  );
   $form = array(
     'generic_page_fieldset' => array(
       '#type' => 'fieldset',
@@ -29,45 +46,38 @@ function generic_page_render_page(array $form, array &$form_state) {
       '#collapsible' => TRUE,
       '#collapsed' => FALSE,
       'table' => array(
-        '#type' => 'table',
+        '#type' => 'tableselect',
         '#header' => array(
           'link' => t('Link'),
           'textfield' => t('Text Field'),
         ),
         '#options' => array(
           'option_1' => array(
-            'link' => array(
-              '#type' => 'link',
-              '#title' => t('Option 1'),
-              '#href' => '',
-            ),
-            'textfield' => array(
-              '#type' => 'textfield',
-              '#title' => t('Text Field 1'),
-            ),
+            'link' => l(t('Option 1'), 'http://www.google.com'),
+            'textfield' => array('data' => $textfield),
           ),
           'option_2' => array(
-            'link' => array(
-              '#type' => 'link',
-              '#title' => t('Option 2'),
-              '#href' => '/admin',
-            ),
-            'textfield' => array(
-              '#type' => 'textfield',
-              '#title' => t('Text Field 2'),
-            ),
+            'link' => l(t('Option 2'), 'admin'),
+            'textfield' => array('data' => array_merge($textfield, array('#default_value' => 'Default Value'))),
           ),
         ),
       ),
-      'checkbox' => array(
-
+    ),
+    'checkbox' => array(
+      '#type' => 'checkbox',
+      '#title' => t('Checkbox'),
+    ),
+    'radios' => array(
+      '#type' => 'radios',
+      '#title' => t('Radio Buttons'),
+      '#default_value' => 'on',
+      '#options' => array(
+        'on' => t('On'),
+        'off' => t('Off'),
       ),
-      'radios' => array(
-
-      ),
-      'markup' => array(
-
-      ),
+    ),
+    'markup' => array(
+      '#markup' => 'Markup',
     ),
   );
   return $form;

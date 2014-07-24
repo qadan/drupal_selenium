@@ -1,7 +1,7 @@
 <?php
 /**
  * @file
- * Tests the various Selenium endpoints.
+ * Tests the various Selenium driver endpoints.
  */
 
 class SeleniumWebDriverEndpointTestCase extends DrupalSeleniumWebTestCase {
@@ -13,8 +13,8 @@ class SeleniumWebDriverEndpointTestCase extends DrupalSeleniumWebTestCase {
    */
   public static function getInfo() {
     return array(
-      'name' => 'Selenium Endpoint Tests',
-      'description' => 'Tests that functions making requests to the various Selenium endpoints function correctly.',
+      'name' => 'Selenium Web Driver Endpoint Tests',
+      'description' => 'Tests that functions that drive a Selenium session webpage work correctly.',
       'group' => 'Drupal Selenium Integration',
       'browsers' => array('chrome', 'firefox'),
     );
@@ -24,6 +24,6 @@ class SeleniumWebDriverEndpointTestCase extends DrupalSeleniumWebTestCase {
    * Sets up the test.
    */
   public function setUp() {
-    parent::setUp();
+    parent::setUp('generic_page');
   }
 }
