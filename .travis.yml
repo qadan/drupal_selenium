@@ -11,11 +11,14 @@ env:
   - FEDORA_VERSION="3.7.0"
 before_install:
   - cd $HOME
-  - sudo apt-get -y install libxss1 xdg-utils
+  - sudo apt-get -y install libxss1 xdg-utils libappindicator1
   - wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
   - sudo dpkg -i google-chrome*.deb
-  - sudo ln -s /usr/bin/google-chrome /usr/bin/chrome
-  - export DISPLAY=:99.0
+  - wget http://chromedriver.storage.googleapis.com/2.10/chromedriver_linux64.zip
+  - unzip chromedriver_linux64.zip
+  - sudo chmod 755 chromedriver
+  - sudo ln -s chromedriver /usr/bin/chromedriver
+  - export DISPLAY=:1
   - sh -e /etc/init.d/xvfb start
   - curl "http://selenium-release.storage.googleapis.com/2.42/selenium-server-standalone-2.42.2.jar" > selenium.jar
   - java -jar selenium.jar > /dev/null &
