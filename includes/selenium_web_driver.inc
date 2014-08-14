@@ -24,28 +24,6 @@ class SeleniumWebDriver {
   public $sessionResponse;
 
   /**
-   * Associative array of status codes that the server can pass back.
-   */
-  const STATUS_CODES = array(
-    0 => array("Success", " The command executed successfully."),
-    7 => array("NoSuchElement", " An element could not be located on the page using the given search parameters."),
-    8 => array("NoSuchFrame", " A request to switch to a frame could not be satisfied because the frame could not be found."),
-    9 => array("UnknownCommand", " The requested resource could not be found, or a request was received using an HTTP method that is not supported by the mapped resource."),
-    10 => array("StaleElementReference", " An element command failed because the referenced element is no longer attached to the DOM."),
-    11 => array("ElementNotVisible", " An element command could not be completed because the element is not visible on the page."),
-    12 => array("InvalidElementState", " An element command could not be completed because the element is in an invalid state (e.g., attempting to click a disabled element)."),
-    13 => array("UnknownError", " An unknown server-side error occurred while processing the command."),
-    15 => array("ElementIsNotSelectable", " An attempt was made to select an element that cannot be selected."),
-    17 => array("JavaScriptError", " An error occurred while executing user supplied JavaScript."),
-    19 => array("XPathLookupError", " An error occurred while searching for an element by XPath."),
-    23 => array("NoSuchWindow", " A request to switch to a different window could not be satisfied because the window could not be found."),
-    24 => array("InvalidCookieDomain", " An illegal attempt was made to set a cookie under a different domain than the current page."),
-    25 => array("UnableToSetCookie", " A request to set a cookie's value could not be satisfied."),
-    28 => array("Timeout", " A command did not complete before its timeout expired."),
-    303 => array("See other", "See other"),
-  );
-
-  /**
    * Destructor; closes the session when the driver is no longer needed.
    */
   public function __destruct() {
@@ -119,12 +97,13 @@ class SeleniumWebDriver {
   protected function checkResponseStatus($body, $variables) {
     $array = json_decode(trim($body), TRUE);
     if (!is_null($array)) {
+      $status_codes = $this->getStatusCodes();
       $response_status_code = $array["status"];
-      if (!self::$statusCodes[$response_status_code]) {
+      if (!isset($status_codes[$response_status_code])) {
         throw new Exception("Unknown status code $response_status_code returned from server.\n$body");
       }
       if (!in_array($response_status_code, array(0, 303))) {
-        $message = $response_status_code . " - " . self::$statusCodes[$response_status_code][0] . " - " . self::$statusCodes[$response_status_code][1] . "\n";
+        $message = $response_status_code . " - " . $status_codes[$response_status_code][0] . " - " . $status_codes[$response_status_code][1] . "\n";
         $message .= "Arguments: " . print_r($variables, TRUE) . "\n";
         if (isset($array['value']['message'])) {
           $message .= "Message: " . $array['value']['message'] . "\n";
@@ -266,5 +245,32 @@ class SeleniumWebDriver {
       }
     }
     return $rv;
+  }
+
+  /**
+   * Returns status codes via a function.
+   *
+   * For no other reason than because Coder is being a butt about accessing
+   * camelCase-y properties statically.
+   */
+  public static function getStatusCodes() {
+    return array(
+      0 => array("Success", " The command executed successfully."),
+      7 => array("NoSuchElement", " An element could not be located on the page using the given search parameters."),
+      8 => array("NoSuchFrame", " A request to switch to a frame could not be satisfied because the frame could not be found."),
+      9 => array("UnknownCommand", " The requested resource could not be found, or a request was received using an HTTP method that is not supported by the mapped resource."),
+      10 => array("StaleElementReference", " An element command failed because the referenced element is no longer attached to the DOM."),
+      11 => array("ElementNotVisible", " An element command could not be completed because the element is not visible on the page."),
+      12 => array("InvalidElementState", " An element command could not be completed because the element is in an invalid state (e.g., attempting to click a disabled element)."),
+      13 => array("UnknownError", " An unknown server-side error occurred while processing the command."),
+      15 => array("ElementIsNotSelectable", " An attempt was made to select an element that cannot be selected."),
+      17 => array("JavaScriptError", " An error occurred while executing user supplied JavaScript."),
+      19 => array("XPathLookupError", " An error occurred while searching for an element by XPath."),
+      23 => array("NoSuchWindow", " A request to switch to a different window could not be satisfied because the window could not be found."),
+      24 => array("InvalidCookieDomain", " An illegal attempt was made to set a cookie under a different domain than the current page."),
+      25 => array("UnableToSetCookie", " A request to set a cookie's value could not be satisfied."),
+      28 => array("Timeout", " A command did not complete before its timeout expired."),
+      303 => array("See other", "See other"),
+    );
   }
 }

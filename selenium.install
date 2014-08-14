@@ -33,7 +33,7 @@ function selenium_requirements() {
     }
     // If the server returns JSON, but the status isn't 0.
     elseif ($response['status'] !== 0) {
-      $status_codes = SeleniumWebDriver::STATUS_CODES;
+      $status_codes = SeleniumWebDriver::getStatusCodes();
       $server_description = $t('Selenium server at default location !location returned a non-zero error code !code (!message). Please check the server status, or set up an alternate connection at <a href="/admin/config/development/testing/settings">the testing configuration page</a>.', array(
         '!location' => $url,
         '!code' => $response['status'],

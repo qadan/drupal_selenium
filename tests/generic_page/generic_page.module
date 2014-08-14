@@ -37,7 +37,6 @@ function generic_page_form(array $form, array &$form_state) {
     '#type' => 'textfield',
     '#title' => 'Text Field',
     '#title_display' => 'invisible',
-    '#name' => 'text_field',
   );
   $form = array(
     'generic_page_fieldset' => array(
@@ -54,14 +53,19 @@ function generic_page_form(array $form, array &$form_state) {
         '#options' => array(
           'option_1' => array(
             'link' => l(t('Option 1'), 'http://www.google.com'),
-            'textfield' => array('data' => $textfield),
+            'textfield' => array('data' => array_merge($textfield, array('#name' => 'text_field_1'))),
           ),
           'option_2' => array(
             'link' => l(t('Option 2'), 'admin'),
-            'textfield' => array('data' => array_merge($textfield, array('#default_value' => 'Default Value'))),
+            'textfield' => array('data' => array_merge($textfield, array('#name' => 'text_field_2'))),
           ),
         ),
       ),
+    ),
+    'textarea' => array(
+      '#type' => 'textarea',
+      '#title' => t('Textarea'),
+      '#default_value' => t('This is a textarea field with a default value.'),
     ),
     'checkbox' => array(
       '#type' => 'checkbox',
@@ -77,7 +81,7 @@ function generic_page_form(array $form, array &$form_state) {
       ),
     ),
     'markup' => array(
-      '#markup' => 'Markup',
+      '#markup' => l(t('Markup'), 'http://google.com', array('attributes' => array('target' => '_blank'))),
     ),
   );
   return $form;

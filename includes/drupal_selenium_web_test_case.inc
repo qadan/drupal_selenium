@@ -350,7 +350,7 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    * @param object $account
    *   The user account to log in with.
    */
-  protected function drupalLogin(stdClass $account) {
+  protected function drupalLogin($account) {
     // If someone is logged in, log them out first.
     if ($this->loggedInUser) {
       $this->drupalLogout();

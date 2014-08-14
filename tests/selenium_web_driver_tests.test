@@ -25,5 +25,27 @@ class SeleniumWebDriverEndpointTestCase extends DrupalSeleniumWebTestCase {
    */
   public function setUp() {
     parent::setUp('generic_page');
+    $this->openUrl('generic_page');
+  }
+
+  /**
+   * Tests getAllWindowHandles().
+   */
+  public function testGetAllWindowHandles() {
+    $this->clickLink('Markup');
+    $handles = $this->getAllWindowHandles();
+    $this->assertFalse($handles == '', "getAllWindowHandles returned value of " . implode(', ', $handles));
+  }
+
+  /**
+   * Tests getWindowHandle(), then attempts to select and close that window.
+   */
+  public function testGetWindowHandle() {
+    $handle = $this->getWindowHandle();
+    $this->assertFalse($handle == '', "getWindowHandle returned value of $handle");
+    $this->selectWindow($handle);
+    $this->assertEqual($handle, $this->getWindowHandle(), "Switching to window with handle $handle successful.");
+    $this->closeWindow();
+    $this->assertTrue($this->getAllWindowHandles() == '', "After closing the window, no more window handles are present.");
   }
 }
