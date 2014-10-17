@@ -1,4 +1,4 @@
-# Drupal Selenium Integration [![Build Status](https://travis-ci.org/discoverygarden/drupal_selenium.png?branch=7.x)](https://travis-ci.org/discoverygarden/drupal_selenium)
+# Drupal Selenium Integration [![Build Status](https://travis-ci.org/qadan/drupal_selenium.png?branch=7.x)](https://travis-ci.org/discoverygarden/drupal_selenium)
 
 ## Introduction
 
@@ -61,7 +61,7 @@ The Drupal Selenium Integration module can be configured on your site at admin/c
 
 The Selenium server host and port section allows you to specify where the Selenium server is hosted at. The page will attempt to establish a connection to that server, obtain its status, and let you know if any issues were encountered.
 
-Allowed Selenium Browsers is a list of comma-and-space-separated browsers that tests consider to be valid for spinning up. The browsers 'firefox' and 'chrome' are handled especially by the module, and any others are handled by a generic driver that attempts to instantiate a Selenium session using it. THIS FEATURE SHOULD BE USED AT YOUR OWN RISK.
+Allowed Selenium Browsers is a list of comma-and-space-separated browsers that tests consider to be valid for spinning up. The browsers 'firefox' and 'chrome' are handled especially by the module, and any others are handled by a generic driver that attempts to instantiate a Selenium session using it. THIS FEATURE SHOULD BE USED AT YOUR OWN RISK, although to be fair, the only 'risk' really is that your tests will get sad yellow and red messages and you might have to clean up the failed tests from the database.
 
 ## Notes about supported browsers
 

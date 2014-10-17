@@ -30,13 +30,6 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
   protected $browser;
 
   /**
-   * Forces the test to run on the actual site rather than a SimpleTest sandbox.
-   *
-   * This should be used with extreme caution.
-   */
-  public $onOriginal = FALSE;
-
-  /**
    * Database prefix for the SimpleTest sandbox.
    */
   protected $sandboxDatabasePrefix;
@@ -94,33 +87,6 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
 
     // Instantiate the driver.
     $this->driver = $this->seleniumDriver($browser);
-
-    // Determine whether to run in the sandbox or on the original site.
-    if ($this->onOriginal) {
-      // Make the database switch.
-      $this->sandboxDatabasePrefix = $this->databasePrefix;
-      $this->originalDatabasePrefix = NULL;
-      // Backup the sandbox connection.
-      Database::renameConnection('default', 'simpletest_sandbox');
-      $connection_info = Database::getConnectionInfo('simpletest_sandbox');
-      Database::addConnectionInfo('default', 'default', $connection_info['default']);
-      // Switch connection to the original site.
-      $this->switchConnectionTo('simpletest_original_default');
-    }
-  }
-
-  /**
-   * Tears down the test.
-   *
-   * @see DrupalWebTestCase::tearDown()
-   * @see http://code.google.com/p/selenium/wiki/JsonWireProtocol#/session/:sessionId
-   */
-  public function tearDown() {
-    // If this was not run on the sandbox, switch back before completion.
-    if ($this->onOriginal) {
-      $this->switchConnectionTo('simpletest_sandbox');
-    }
-    parent::tearDown();
   }
 
   /**
@@ -200,7 +166,7 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
       return;
     }
     elseif ($response['status'] !== 0) {
-      $status_codes = SeleniumWebDriver::$statusCodes;
+      $status_codes = SeleniumWebDriver::getStatusCodes();
       $caller = array(
         'file' => 'drupal_selenium_web_test_case.inc',
         // @codingStandardsIgnoreStart
@@ -452,8 +418,8 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
       $writable = file_prepare_directory($directory, FILE_CREATE_DIRECTORY);
       if ($writable) {
         $file = file_unmanaged_save_data($page_contents, $this->originalFileDirectory . '/simpletest/verbose/' . $testname . '.html', FILE_EXISTS_RENAME);
+        $this->error(l(t('Verbose page content'), $GLOBALS['base_url'] . '/' . $file, array('attributes' => array('target' => '_blank'))), 'User notice');
       }
-      $this->error(l(t('Verbose page content'), $GLOBALS['base_url'] . '/' . $file, array('attributes' => array('target' => '_blank'))), 'User notice');
     }
   }
 
