@@ -1,4 +1,4 @@
-# Drupal Selenium Integration [![Build Status](https://travis-ci.org/qadan/drupal_selenium.png?branch=7.x)](https://travis-ci.org/discoverygarden/drupal_selenium)
+# Drupal Selenium Integration [![Build Status](https://travis-ci.org/qadan/drupal_selenium.png?branch=7.x)](https://travis-ci.org/qadan/drupal_selenium)
 
 ## Introduction
 
