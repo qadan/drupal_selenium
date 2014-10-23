@@ -107,6 +107,11 @@ class SeleniumWebDriver {
         $message .= "Arguments: " . print_r($variables, TRUE) . "\n";
         if (isset($array['value']['message'])) {
           $message .= "Message: " . $array['value']['message'] . "\n";
+          if (isset($array['value']['class'])) {
+            // The class name can be helpful in identifying the error,
+            // especially when the server passes back error 13 (unknown).
+            $message .= "Class:" . $array['value']['class'] . "\n";
+          }
         }
         else {
           $message .= "Response: " . $body . "\n";
@@ -140,6 +145,10 @@ class SeleniumWebDriver {
       "xpath" => "xpath",
       "link" => "link text",
       "css" => "css selector",
+      // These two aren't actually from Selenium 1; I just think it's stupid to
+      // write out whole big phrases for your locator type.
+      "tag" => "tag name",
+      "linkpart" => "partial link text",
       // Selenium 2 has these four new selectors. Also, Selenium 1 is missing
       // the 'dom' selector.
       0 => "partial link text",

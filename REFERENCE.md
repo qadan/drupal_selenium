@@ -8,16 +8,11 @@ These methods are available when writing tests by calling `$this->functionName()
 
 Name|Description
 ----|-----------
-assertFieldById|Asserts the existence of a field by ID.
-assertFieldByName|Asserts the existence of a field by name.
-assertFieldByXPath|Asserts the existence of a field by the given XPath.
 assertFieldChecked|Asserts that a checkbox is checked.
 assertField|Asserts that a field exists on the page.
 assertLinkByHref|Asserts that a link exists on the page, by full or partial href.
 assertLink|Asserts that a link exists on the page.
 assertNoDuplicateIds|Asserts that there are no duplicate IDs on the page.
-assertNoFieldById|Asserts the absence of a field by ID.
-assertNoFieldByName|Asserts the absence of a field by name.
 assertNoFieldChecked|Asserts that a checkbox is unchecked.
 assertNoField|Asserts that a field doesn't exist on the page.
 assertNoLinkByHref|Asserts that no link exists on the page, by full or partial href.
@@ -93,18 +88,17 @@ moveCursor|Move the cursor relative to an element or to its current position.
 
 Name|Description
 ----|-----------
-describeElement|Get properties of an element as an array.
 elementIsSameElementAs|Determine if two element locators represent the same element.
-getAllNextElements|Get all elemenets after the given one using specific search parameters.
+getAllNextElements|Get all child elements after the given one using specific search parameters.
 getElementAttributeValue|Get the value of a specified attribute of an element.
 getElementCSSProperty|Get a specified CSS property of an element.
 getElementLocation|Get the coordinates of an element.
 getElementSelectedOption|Get the currently selected option of an element.
-getElementSize|Get the sixe of an element.
+getElementSize|Get the size of an element.
 getElementTagName|Get the tag name of an element.
 getElementText|Get the text of an element.
 getElementValue|Get the value of an element.
-getNextElement|Get the next element after the given one using specific search parameters.
+getNextElement|Get the first child element after the given one using specific search parameters.
 getOptions|Get all an element's options.
 isElementDisplayed|Determine if the element is displayed.
 isElementEnabled|Determine if the element is enabled.

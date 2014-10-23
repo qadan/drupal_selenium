@@ -4,7 +4,10 @@
  * Tests the various Selenium element endpoints.
  */
 
-class SeleniumWebElementEndpointTestCase extends DrupalSeleniumWebTestCase {
+/**
+ * Tests Selenium element finders.
+ */
+class SeleniumWebElementFindTestCase extends DrupalSeleniumWebTestCase {
 
   /**
    * Gets test info.
@@ -13,8 +16,8 @@ class SeleniumWebElementEndpointTestCase extends DrupalSeleniumWebTestCase {
    */
   public static function getInfo() {
     return array(
-      'name' => 'Selenium Element Endpoint Tests',
-      'description' => 'Tests that functions manipulating Selenium elements work correctly.',
+      'name' => 'Element Find Tests',
+      'description' => 'Tests that elements can be found appropriately using locators.',
       'group' => 'Drupal Selenium Integration',
       'browsers' => array('chrome', 'firefox'),
     );
@@ -25,5 +28,423 @@ class SeleniumWebElementEndpointTestCase extends DrupalSeleniumWebTestCase {
    */
   public function setUp() {
     parent::setUp('generic_page');
+  }
+
+  /**
+   * Attempts to findAllElements using an xpath that should return two.
+   */
+  public function testFindAllElements() {
+    $elements = $this->getAllElements('xpath=//*[@id="edit-generic-page-fieldset"]/div/table[2]/tbody/tr');
+    debug($elements);
+    $this->assertEqual(count($elements), 2, "Both table row elements on the page were found using getAllElements..");
+  }
+
+  /**
+   * Checks if findElement returns only the expected element in a set.
+   */
+  public function testFindElement() {
+    // There are two links in the table on the generic page with different
+    // labels; this should find the first one.
+    $element = $this->getElement('xpath=//*[@id="edit-generic-page-fieldset"]/div/table/tbody/tr/td/a');
+    $text = $this->getElementText($element);
+    $this->assertEqual('Option 1', $text, "Element found on page contains text '$text' (expected: 'Option 1')");
+  }
+
+  /**
+   * Checks that a selected element is active.
+   */
+  public function testGetActiveElement() {
+    $fieldset = $this->getElement('id=edit-checkbox');
+    $this->moveCursor(0, 0, $fieldset);
+    $this->mouseClickButton();
+    $this->assertEqual($this->getElementAttributeValue($this->getActiveElement(), 'type'), 'checkbox', "Active element is the element that was clicked on.");
+  }
+
+  /**
+   * It is assumed that if openUrl works, that waitForElements also does. It is
+   * also assumed that if isElementDisplayed works, that waitForVisibleElements
+   * also does.
+   */
+}
+
+/**
+ * Tests functions that interact with Selenium elements.
+ */
+class SeleniumWebElementInteractTestCase extends DrupalSeleniumWebTestCase {
+
+  /**
+   * Gets test info.
+   *
+   * @see DrupalWebTestCase::getInfo()
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Element Interaction Tests',
+      'description' => 'Tests that elements can be interacted with.',
+      'group' => 'Drupal Selenium Integration',
+      'browsers' => array('chrome', 'firefox'),
+    );
+  }
+
+  /**
+   * Sets up the test.
+   */
+  public function setUp() {
+    parent::setUp('generic_page');
+  }
+
+  /**
+   * Checks the ability to get the next child element after a given one.
+   */
+  public function testGetNextElement() {
+    $element = $this->getAllElements('tag name=table');
+    $element = $this->getNextElement($element[1], 'tag name=a');
+    $value = $this->getElementText($element);
+    $this->assertEqual('Option 1', $value, "Element after first one found contained expected value of '$value' (expected: 'Option 1').");
+  }
+
+  /**
+   * Checks the ability to get all child elements after a given one.
+   */
+  public function testGetAllNextElements() {
+    $element = $this->getAllElements('tag name=table');
+    $elements = $this->getAllNextElements($element[1], 'tag name=a');
+    if ($this->assertEqual(count($elements), 2, "Correct element count of 2 was found.")) {
+      foreach ($elements as $count => $element) {
+        $element_number = $count + 1;
+        $text = $this->getElementText($element);
+        $this->assertEqual($text, "Option " . $element_number, "Element text contains expected value of '$text' (expected: 'Option $element_number').");
+      }
+    }
+  }
+
+  /**
+   * Checks that an element can be validated as equal using two locators.
+   */
+  public function testElementIsSameAsElement() {
+    $element_1 = $this->getElement('tag=h1');
+    $element_2 = $this->getElement('id=page-title');
+    $this->assertTrue($this->elementIsSameElementAs($element_1, $element_2), "Both elements found using different locators were able to be identified as referring to the same element.");
+  }
+}
+
+/**
+ * Tests getting element properties.
+ */
+class SeleniumWebElementPropertyTestCase extends DrupalSeleniumWebTestCase {
+
+  /**
+   * Gets test info.
+   *
+   * @see DrupalWebTestCase::getInfo()
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Element Property Tests',
+      'description' => 'Tests that element properties can be retrieved.',
+      'group' => 'Drupal Selenium Integration',
+      'browsers' => array('chrome', 'firefox'),
+    );
+  }
+
+  /**
+   * Sets up the test.
+   */
+  public function setUp() {
+    parent::setUp('generic_page');
+  }
+
+  /**
+   * Tests getting the value of a specified element attribute.
+   */
+  public function testGetElementAttributeValue() {
+    $element = $this->getElement('tag=h1');
+    $this->assertEqual($this->getElementAttributeValue($element, 'id'), 'page-title', "Able to get attribute of an element by querying for it via getElementAttributeValue.");
+  }
+
+  /**
+   * Tests getting a specified CSS property of an element.
+   */
+  public function testGetElementCssProperty() {
+    $actual = $this->getElementCSSProperty($this->getElement('tag=h1'), 'display');
+    $this->assertEqual($actual, 'block', "Retrieved CSS property '$actual' for 'display in h1 matched expected value 'block'.");
+  }
+
+  /**
+   * Tests getting the size of an element.
+   */
+  public function testGetElementSize() {
+    $element = $this->getElement('xpath=//select');
+    $size = $this->getElementSize($element);
+    // We don't really know what it's going to contain, but we know it needs a
+    // pair of 'height' and 'width' keys to be useful.
+    if ($this->assertTrue(is_array($size), "Response returned by getElementSize is an array.")) {
+      $this->assertTrue(isset($size['height']) && isset($size['width']), "Size array contains both a height and a width.");
+    }
+  }
+
+  /**
+   * Tests getting the tag name of an element.
+   */
+  public function testGetElementTagName() {
+    $element = $this->getElement('id=edit-generic-page-fieldset');
+    $tag = $this->getElementTagName($element);
+    $this->assertEqual($tag, 'fieldset', "Element found using ID locator returned correct tag name of '$tag' (expected: 'fieldset').");
+  }
+
+  /**
+   * Tests getting the text of an element.
+   */
+  public function testGetElementText() {
+    $element = $this->getElement('tag=h1');
+    $text = $this->getElementText($element);
+    $this->assertEqual($text, 'Generic Page', "Text of h1 '$text' matches expected text 'Generic Page'.");
+  }
+
+  /**
+   * Tests getting the value of an element.
+   */
+  public function testGetElementValue() {
+    $element = $this->getElement('xpath=//*[@id="edit-select"]/option[1]');
+    $value = $this->getElementValue($element);
+    $this->assertEqual($value, 'default', "Value of first select option '$value' matches expected value 'default'.");
+  }
+}
+
+/**
+ * Tests getting information about optionable elements.
+ */
+class SeleniumWebElementOptionGetTestCase extends DrupalSeleniumWebTestCase {
+
+  /**
+   * Gets test info.
+   *
+   * @see DrupalWebTestCase::getInfo()
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Element Get Tests (Optionable)',
+      'description' => 'Tests the ability to get information about optionable elements.',
+      'group' => 'Drupal Selenium Integration',
+      'browsers' => array('chrome', 'firefox'),
+    );
+  }
+
+  /**
+   * Sets up the test.
+   */
+  public function setUp() {
+    parent::setUp('generic_page');
+  }
+
+  /**
+   * Tests the ability to get all options for a radio element.
+   */
+  public function testGetRadioOptions() {
+    $element = $this->getElement('id=edit-radios');
+    $options = $this->getOptions($element, 'radio');
+    $count = count($options);
+    if ($this->assertEqual($count, 2, "Correct number of options found (expected: 2, actual: $count).")) {
+      foreach ($options as $option) {
+        $option_ids = array(
+          2 => 'on',
+          3 => 'off',
+        );
+        $value = $this->getElementValue($option);
+        $this->assertEqual($value, $option_ids[$option->id], "Value of found option '$value' equals expected {$option_ids[$option->id]}.");
+      }
+    }
+  }
+
+  /**
+   * Tests the ability to get all options for a select element.
+   */
+  public function testGetSelectOptions() {
+    $element = $this->getElement('tag=select');
+    $options = $this->getOptions($element);
+    $count = count($options);
+    if ($this->assertEqual($count, 2, "Correct number of options found (expected: 2, actual: $count).")) {
+      foreach ($options as $option) {
+        $option_ids = array(
+          2 => 'default',
+          3 => 'alternate',
+        );
+        $value = $this->getElementValue($option);
+        $this->assertEqual($value, $option_ids[$option->id], "Value of found option '$value' equals expected {$option_ids[$option->id]}.");
+      }
+    }
+  }
+
+  /**
+   * Tests the ability to get the current selected option for a select element.
+   */
+  public function testGetSelectedSelectElement() {
+    $element = $this->getElement('tag=select');
+    $selected = $this->getElementValue($this->getElementSelectedOption($element));
+    $this->assertEqual('default', $selected, "Selected element value of '$selected' matches expected 'default'.");
+  }
+
+  /**
+   * Tests the ability to see if an option element is selected.
+   */
+  public function testIsElementSelected() {
+    $elements = $this->getAllElements('tag=option');
+    $count = count($elements);
+    if ($this->assertEqual($count, 2, "Found element count of $count is correct (expected: 2).")) {
+      $this->assertTrue($this->isElementSelected($elements[0]), "Selected element is reported as selected by isElementSelected.");
+      $this->assertFalse($this->isElementSelected($elements[1]), "Unselected element is not reported as selected by isElementSelected.");
+    }
+  }
+
+  /**
+   * Tests that checkboxes can use isElementSelected to find their status.
+   */
+  public function testIsCheckboxSelected() {
+    $element = $this->getElement('id=edit-checkbox');
+    $this->assertFalse($this->isElementSelected($element), "Checkbox element is initially unselected.");
+    $this->clickElement($element);
+    $this->assertTrue($this->isElementSelected($element), "After clicking the checkbox, it is reported as selected.");
+  }
+}
+
+/**
+ * Tests setting information about optionable elements.
+ */
+class SeleniumWebElementOptionSetTestCase extends DrupalSeleniumWebTestCase {
+
+  /**
+   * Gets test info.
+   *
+   * @see DrupalWebTestCase::getInfo()
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Element Set Tests (Optionable)',
+      'description' => 'Tests the ability to set optionable elements.',
+      'group' => 'Drupal Selenium Integration',
+      'browsers' => array('chrome', 'firefox'),
+    );
+  }
+
+  /**
+   * Sets up the test.
+   */
+  public function setUp() {
+    parent::setUp('generic_page');
+  }
+
+  /**
+   * Tests clicking an option element.
+   */
+  public function testClickElement() {
+    $elements = $this->getAllElements('xpath=//input[@type="radio"]');
+    $count = count($elements);
+    if ($this->assertEqual($count, 2, "Found element count of $count is correct (expected: 2).")) {
+      $this->clickElement($elements[1]);
+      $this->assertTrue($this->isElementSelected($elements[1]));
+    }
+  }
+
+  /**
+   * Tests that a select option can be selected by its index.
+   */
+  public function testSelectElementByIndex() {
+    $element = $this->getElement('tag=select');
+    $options = $this->getAllNextElements($element, 'tag=option');
+    $this->assertTrue($this->selectElementOptionByIndex($element, 1), "Selenium reported that it was able to select option 1 for the select box.");
+    $this->assertTrue($this->isElementSelected($options[0]), "After selecting option 1, it was reported as selected.");
+    $this->assertTrue($this->selectElementOptionByIndex($element, 2), "Selenium reported that it was able to select option 1 for the select box.");
+    $this->assertTrue($this->isElementSelected($options[1]), "After selecting option 1, it was reported as selected.");
+  }
+
+  /**
+   * Tests that a select option can be selected by its label.
+   */
+  public function testSelectElementByLabel() {
+    $element = $this->getElement('tag=select');
+    $options = $this->getAllNextElements($element, 'tag=option');
+    $this->assertTrue($this->selectElementOptionByLabel($element, 'Default Value'), "Selenium reported that it was able to select option 'Default Value' for the select box.");
+    $this->assertTrue($this->isElementSelected($options[0]), "After selecting option 'Default Value', it was reported as selected.");
+    $this->assertTrue($this->selectElementOptionByLabel($element, 'Alternate'), "Selenium reported that it was able to select option 'Alternate' for the select box.");
+    $this->assertTrue($this->isElementSelected($options[1]), "After selecting option 'Alternate', it was reported as selected.");
+  }
+
+  /**
+   * Tests that a select option can be selected by its index.
+   */
+  public function testSelectElementByValue() {
+    $element = $this->getElement('tag=select');
+    $options = $this->getAllNextElements($element, 'tag=option');
+    $this->assertTrue($this->selectElementOptionByValue($element, 'default'), "Selenium reported that it was able to select option with value 'default' for the select box.");
+    $this->assertTrue($this->isElementSelected($options[0]), "After selecting option with value 'default', it was reported as selected.");
+    $this->assertTrue($this->selectElementOptionByValue($element, 'alternate'), "Selenium reported that it was able to select option with value 'alternate' for the select box.");
+    $this->assertTrue($this->isElementSelected($options[1]), "After selecting option with value 'alternate', it was reported as selected.");
+  }
+}
+
+/**
+ * Tests setting information about text elements.
+ */
+class SeleniumWebElementTextSetTestCase extends DrupalSeleniumWebTestCase {
+
+  /**
+   * Gets test info.
+   *
+   * @see DrupalWebTestCase::getInfo()
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Element Set Tests (Text)',
+      'description' => 'Tests the ability to set text elements.',
+      'group' => 'Drupal Selenium Integration',
+      'browsers' => array('chrome', 'firefox'),
+    );
+  }
+
+  /**
+   * Sets up the test.
+   */
+  public function setUp() {
+    parent::setUp('generic_page');
+  }
+
+  /**
+   * Tests that text elements can be cleared.
+   */
+  public function testClearElement() {
+    $element = $this->getElement('id=edit-textarea');
+    $this->assertEqual("This is a textarea field with a default value.", $this->getElementValue($element), "Textarea found contains default value.");
+    $this->clearElement($element);
+    $text = $this->getElementValue($element);
+    $message_text = $text == '' ? "no text" : $text;
+    $this->assertEqual("", $text, "After clearing the textarea element, $message_text was found (expected: empty).");
+  }
+
+  /**
+   * Tests that keys can be sent to an element.
+   */
+  public function testSendKeys() {
+    $element = $this->getElement('name=text_field_1');
+    $this->assertEqual("", $this->getElementValue($element), "Before entering a value for the text field, no text was present.");
+    $this->sendKeysToElement($element, "Hello World");
+    $text = $this->getElementValue($element);
+    $message_text = $text == "Hello World" ? "the text 'Hello World'" : "no text";
+    $this->assertEqual("Hello World", $text, "After entering a value for the text field, $message_text was present (expected: 'Hello World').");
+  }
+
+  /**
+   * Tests that a text element can be submitted from.
+   */
+  public function testSubmitElement() {
+    // Using the user login page because I can't be arsed to make a properly-
+    // submitting page.
+    $user = $this->drupalCreateUser(array_keys(module_invoke_all('permission')));
+    $this->openUrl('/user');
+    $this->sendKeysToElement($this->getElement('name=name'), $user->name);
+    $pass = $this->getElement('name=pass');
+    $this->sendKeysToElement($pass, $user->pass_raw);
+    $this->submitElement($pass);
+    $this->waitForVisibleElements('tag=body');
+    $this->verboseScreenshot();
   }
 }

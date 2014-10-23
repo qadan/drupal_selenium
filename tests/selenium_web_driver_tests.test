@@ -4,7 +4,10 @@
  * Tests the various Selenium driver endpoints.
  */
 
-class SeleniumWebDriverEndpointTestCase extends DrupalSeleniumWebTestCase {
+/**
+ * Browser window tests.
+ */
+class SeleniumWebDriverWindowTestCase extends DrupalSeleniumWebTestCase {
 
   /**
    * Gets test info.
@@ -13,8 +16,8 @@ class SeleniumWebDriverEndpointTestCase extends DrupalSeleniumWebTestCase {
    */
   public static function getInfo() {
     return array(
-      'name' => 'Selenium Web Driver Endpoint Tests',
-      'description' => 'Tests that functions that drive a Selenium session webpage work correctly.',
+      'name' => 'Browser Window Tests',
+      'description' => 'Tests that functions driving Selenium browser windows function correctly.',
       'group' => 'Drupal Selenium Integration',
       'browsers' => array('chrome', 'firefox'),
     );
@@ -29,7 +32,7 @@ class SeleniumWebDriverEndpointTestCase extends DrupalSeleniumWebTestCase {
   }
 
   /**
-   * Tests getAllWindowHandles().
+   * Tests getAllWindowHandles.
    */
   public function testGetAllWindowHandles() {
     $this->clickLink('Markup');
@@ -38,14 +41,277 @@ class SeleniumWebDriverEndpointTestCase extends DrupalSeleniumWebTestCase {
   }
 
   /**
-   * Tests getWindowHandle(), then attempts to select and close that window.
+   * Tests getWindowHandle.
    */
   public function testGetWindowHandle() {
-    $handle = $this->getWindowHandle();
-    $this->assertFalse($handle == '', "getWindowHandle returned value of $handle");
-    $this->selectWindow($handle);
-    $this->assertEqual($handle, $this->getWindowHandle(), "Switching to window with handle $handle successful.");
+    $old_handle = $this->getWindowHandle();
+    $this->assertFalse($old_handle == '', "getWindowHandle returned value of $old_handle");
+    $this->clickLink('Markup');
+    $handles = $this->getAllWindowHandles();
+    $this->selectWindow($handles[1]);
+    $new_handle = $this->getWindowHandle();
+    $this->assertNotEqual($old_handle, $new_handle, "Successfully switched to the new window with handle $new_handle using selectWindow.");
+    $this->selectWindow($old_handle);
+    $this->assertEqual($old_handle, $this->getWindowHandle(), "Switching back to window with handle $old_handle successful.");
+  }
+
+  /**
+   * Opens a new tab, and then closes it.
+   */
+  public function testCloseWindow() {
+    $this->clickLink('Markup');
     $this->closeWindow();
-    $this->assertTrue($this->getAllWindowHandles() == '', "After closing the window, no more window handles are present.");
+    $handles = $this->getAllWindowHandles();
+    $this->assertEqual(count($handles), 1, "After closing the newly opened tab, only one handle remained.");
+  }
+}
+
+/**
+ * Tests for basic browser functionality.
+ */
+class SeleniumWebDriverBrowserTestCase extends DrupalSeleniumWebTestCase {
+
+  /**
+   * Gets test info.
+   *
+   * @see DrupalWebTestCase::getInfo()
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Browser Basic Tests',
+      'description' => 'Tests that functions driving Selenium browser controls function correctly.',
+      'group' => 'Drupal Selenium Integration',
+      'browsers' => array('chrome', 'firefox'),
+    );
+  }
+
+  /**
+   * Sets up the test.
+   */
+  public function setUp() {
+    parent::setUp('generic_page');
+    $this->openUrl('generic_page');
+  }
+
+  /**
+   * Tests that attempting to get a screenshot doesn't return FALSE.
+   */
+  public function testGetScreenshot() {
+    $screenshot = $this->getScreenshot();
+    $this->assertTrue($screenshot !== FALSE, "Attempt to take a screenshot did not return FALSE.");
+  }
+
+  /**
+   * Tests the forward and back buttons.
+   */
+  public function testHistoryBackForward() {
+    $original_url = $this->getUrl();
+    $this->clickLink('Option 1');
+    $new_url = $this->getUrl();
+    $this->historyBack();
+    $this->assertEqual($original_url, $this->getUrl(), "Reported URL after clicking a link and then calling historyBack is the URL reported before clicking the link.");
+    $this->historyForward();
+    $this->assertEqual($new_url, $this->getUrl(), "Reported URL after calling historyForward is the URL reported after clicking the link.");
+  }
+
+  /**
+   * Tests opening a URL directly.
+   */
+  public function testOpenUrl() {
+    // We've already opened a URL, so just check that the current is correct.
+    $this->assertEqual("/generic_page", substr($this->getUrl(), -13, 13), "Currently opened page is /generic_page");
+  }
+
+  /**
+   * Tests postUrl by attempting to use the overridden drupalLogin.
+   */
+  public function testPostUrl() {
+    $user = $this->drupalCreateUser(array_keys(module_invoke_all('permission')));
+    $this->drupalLogin($user);
+  }
+
+  /**
+   * Tests page refresh.
+   */
+  public function testRefresh() {
+    $first_number = $this->getElementText($this->getElement('xpath=//*[@id="generic-page-form"]/div/div[4]/div'));
+    $this->refresh();
+    $this->assertNotEqual($first_number, $this->getElement('xpath=//*[@id="generic-page-form"]/div/div[4]/div'), "Attempting to refresh the page produced a different randomly generated number.");
+  }
+}
+
+/**
+ * Cookie handling and creation tests.
+ */
+class SeleniumWebDriverCookieTestCase extends DrupalSeleniumWebTestCase {
+
+  /**
+   * Gets test info.
+   *
+   * @see DrupalWebTestCase::getInfo()
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Cookie Tests',
+      'description' => 'Tests that Selenium can create and read browser cookies correctly.',
+      'group' => 'Drupal Selenium Integration',
+      'browsers' => array('chrome', 'firefox'),
+    );
+  }
+
+  /**
+   * Sets up the test.
+   */
+  public function setUp() {
+    parent::setUp('generic_page');
+    $this->openUrl('generic_page');
+  }
+
+  /**
+   * Sets a cookie and tries to get its value, then tries to delete it.
+   */
+  public function testSetGetCookie() {
+    $cookie_value = $this->randomName();
+    $this->setCookie('test_cookie', $cookie_value);
+    $cookie = $this->getCookie('test_cookie');
+    $this->assertEqual($cookie_value, $cookie['value'], "Value of the cookie set with setCookie is the same as the value of the cookie retrieved with getCookie.");
+    $this->deleteCookie('test_cookie');
+    $this->assertFalse($this->getCookie('test_cookie'), "Cookie is no longer present after deletion.");
+  }
+
+  /**
+   * Tries to delete all cookies and checks if the cookie array is empty.
+   */
+  public function testDeleteAllCookies() {
+    // Shove a cookie in there just to make sure we have one.
+    $this->setCookie('test_cookie', 'test_value');
+    $this->deleteAllCookies();
+    $cookies = $this->getAllCookies();
+    $this->assertTrue(empty($cookies), "After deleting all cookies, no cookies were found after a call to getAllCookies.");
+  }
+}
+
+/**
+ * Tests the result of getting page properties.
+ */
+class SeleniumWebDriverGetPagePropertiesTestCase extends DrupalSeleniumWebTestCase {
+
+  /**
+   * Gets test info.
+   *
+   * @see DrupalWebTestCase::getInfo()
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Page Property Tests',
+      'description' => 'Tests that functions requesting page contents or properties work correctly.',
+      'group' => 'Drupal Selenium Integration',
+      'browsers' => array('chrome', 'firefox'),
+    );
+  }
+
+  /**
+   * Sets up the test.
+   */
+  public function setUp() {
+    parent::setUp('generic_page');
+    $this->openUrl('generic_page');
+  }
+
+  /**
+   * Tests getting the text of the body.
+   */
+  public function testGetBodyText() {
+    $this->assertTrue(strpos($this->getBodyText(), 'This is a textarea field with a default value.'), "Value of getBodyText contains expected.");
+  }
+
+  /**
+   * Tests that the page title can be gotten.
+   */
+  public function testGetPageTitle() {
+    $this->assertTitle('Generic Page | Drupal', "Page title matches expected.");
+  }
+
+  /**
+   * Tests that the page source content is correct.
+   */
+  public function testGetSource() {
+    $dom = new DOMDocument();
+    $this->assertTrue($dom->loadHTML($this->getSource()), "Results from getSource successfully loaded as HTML.");
+  }
+
+  /**
+   * Tests that the page URL is correct.
+   */
+  public function testGetUrl() {
+    global $base_url;
+    $this->assertEqual($base_url . "/generic_page", $this->getUrl(), "URL of the current page matches expected.");
+  }
+}
+/**
+ * Tests for mouse functionality.
+ */
+class SeleniumWebDriverMouseTestCase extends DrupalSeleniumWebTestCase {
+
+  /**
+   * Gets test info.
+   *
+   * @see DrupalWebTestCase::getInfo()
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Mouse Tests',
+      'description' => 'Tests that functions moving and clicking the mouse work correctly.',
+      'group' => 'Drupal Selenium Integration',
+      'browsers' => array('chrome', 'firefox'),
+    );
+  }
+
+  /**
+   * Sets up the test.
+   */
+  public function setUp() {
+    parent::setUp('generic_page');
+    $this->openUrl('generic_page');
+  }
+
+  /**
+   * Tests that moving the mouse to an element works.
+   *
+   * Currently we are unable to implement a test to check if we can move the
+   * mouse to an offset, as the functionality for getting the current mouse
+   * position is not yet implemented in Selenium, and the point given on an
+   * element's location differs between browsers, and I'm not sitting here for
+   * hours doing trial-and-error to get the right offset for an element in
+   * Firefox.
+   *
+   * @TODO: Implement this when the feature is added to Selenium.
+   */
+  public function testMoveCursorToElement() {
+    $checkbox = $this->getElement('name=checkbox');
+    $this->moveCursor(0, 0, $checkbox);
+    $this->mouseClickButton();
+    $this->assertTrue($this->isElementSelected($checkbox), "Moving mouse to the checkbox element and clicking on it enabled it.");
+  }
+
+  /**
+   * Double-clicks an element and sees if this produces the desired result.
+   */
+  public function testMouseClickDouble() {
+    $checkbox = $this->getElement('name=checkbox');
+    $this->moveCursor(0, 0, $checkbox);
+    $this->mouseClickDouble();
+    $this->assertFalse($this->isElementSelected($checkbox), "Moving mouse to the checkbox element and double clicking on it disabled it.");
+  }
+
+  /**
+   * Tests that holding and then releasing a mouse button counts as a click.
+   */
+  public function testMouseClickHoldRelease() {
+    $checkbox = $this->getElement('name=checkbox');
+    $this->moveCursor(0, 0, $checkbox);
+    $this->mouseClickHold(0);
+    $this->mouseClickRelease(0);
+    $this->assertTrue($this->isElementSelected($checkbox), "Moving mouse to the checkbox element and holding/releasing the mouse button enabled it.");
   }
 }

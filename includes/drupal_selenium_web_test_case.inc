@@ -30,16 +30,6 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
   protected $browser;
 
   /**
-   * Database prefix for the SimpleTest sandbox.
-   */
-  protected $sandboxDatabasePrefix;
-
-  /**
-   * Database prefix for the original site.
-   */
-  protected $originalDatabasePrefix;
-
-  /**
    * Outputs verbose test results for some driver functions.
    *
    * @var bool
@@ -87,60 +77,6 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
 
     // Instantiate the driver.
     $this->driver = $this->seleniumDriver($browser);
-  }
-
-  /**
-   * Switches the database connection to the given.
-   *
-   * @param string $connection_name
-   *   The connection to switch to.
-   */
-  protected function switchConnectionTo($connection_name = 'simpletest_original_default') {
-    if ($this->checkSameConnection($connection_name)) {
-      return;
-    }
-    switch ($connection_name) {
-      case 'simpletest_sandbox':
-        $this->databasePrefix = $this->sandboxDatabasePrefix;
-        break;
-
-      case 'simpletest_original_default':
-      default:
-        $this->databasePrefix = $this->originalDatabasePrefix;
-        break;
-    }
-    // Remove default.
-    Database::removeConnection('default');
-    // Add default as a copy of the connection we need to switch to.
-    $connection_info = Database::getConnectionInfo($connection_name);
-    Database::addConnectionInfo('default', 'default', $connection_info['default']);
-  }
-
-  /**
-   * Implements some logic to ensure we don't switch to the same connection.
-   *
-   * @param string $connection_name
-   *   The connection name to check for.
-   *
-   * @return bool
-   *   Whether or not this is the same connection.
-   */
-  protected function checkSameConnection($connection_name = 'simpletest_original_default') {
-    switch ($connection_name) {
-      case 'simpletest_sandbox':
-        $same = ($this->databasePrefix === $this->sandboxDatabasePrefix);
-        break;
-
-      case 'simpletest_original_default':
-      default:
-        $same = ($this->databasePrefix === $this->originalDatabasePrefix);
-        break;
-
-    }
-    if ($same) {
-      $this->fail("Already on $connection_name connection", 'Connection');
-    }
-    return $same;
   }
 
   /**
@@ -297,7 +233,7 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
 
     // Load the appropriate driver.
     module_load_include('inc', 'selenium', 'includes/selenium_browser_drivers');
-    $this->pass("Instantiated new Selenium session with browserName: $browser.", 'Selenium WebDriver');
+    $this->pass("Instantiated new Selenium session with browserName: $browser.", "Selenium WebDriver: {$this->browser}");
     switch ($browser) {
       case 'firefox':
         return new SeleniumFirefoxDriver($user_agent, $test_id);
@@ -313,23 +249,22 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
   /**
    * Log in a user using the interface.
    *
-   * @param object $account
+   * @param StdClass $account
    *   The user account to log in with.
    */
-  protected function drupalLogin($account) {
+  protected function drupalLogin(stdClass $account) {
     // If someone is logged in, log them out first.
     if ($this->loggedInUser) {
       $this->drupalLogout();
     }
 
-    $this->openUrl('user');
+    $edit = array(
+      'name' => $account->name,
+      'pass' => $account->pass_raw,
+    );
+    $this->postUrl('user', $edit, "Log in");
 
-    $this->sendKeysToElement($this->getElement('css=#edit-name'), $account->name);
-    $this->sendKeysToElement($this->getElement('css=#edit-pass'), $account->pass_raw);
-    $this->submitElement($this->getElement('css=#edit-submit'));
-
-    // If a "log out" link appears on the page, it is almost certainly because
-    // the login was successful.
+    // Assume success if it's possible to log out.
     $pass = $this->assertLink(t('Log out'), 0, t('User %name successfully logged in.', array('%name' => $account->name)), t('User login'));
 
     if ($pass) {
@@ -349,7 +284,6 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
     $this->openUrl('user');
 
     $pass = $this->assertField('name', t('Username field found.'), t('Logout'));
-
     $pass = $pass && $this->assertField('pass', t('Password field found.'), t('Logout'));
 
     if ($pass) {
@@ -362,15 +296,15 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    */
   protected function appendVerboseMessage() {
     switch ($this->captureType) {
-      case 'none':
-        break;
-
       case 'html':
         $this->verbosePageContents();
         break;
 
       case 'screenshot':
         $this->verboseScreenshot();
+        break;
+
+      default:
         break;
     }
   }
@@ -475,59 +409,39 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
   }
 
   /**
-   * Asserts that a field exists with the given name or ID.
+   * Asserts that a field exists with the given locator.
    *
-   * @param string $field
-   *   Name or id of field to assert.
+   * @param string $locator
+   *   Locator of field to assert.
    * @param string $message
    *   Message to display.
-   * @param string $group
-   *   The group this message belongs to.
    *
    * @return bool
    *   TRUE on pass, FALSE on fail.
    */
-  protected function assertField($field, $message = '', $group = 'Other') {
-    try {
-      $element = $this->getElement("name=$field");
-    }
-    catch (Exception $e) {
-      try {
-        $element = $this->getElement("id=$field");
-      }
-      catch (Exception $e) {
-        $element = FALSE;
-      }
-    }
-    return $this->assertTrue(!empty($element), $message ? $message : t('Field %locator found', array('%locator' => $field)), $group);
+  protected function assertElement($locator, $message = '') {
+    $variables = $this->driver->parseLocator($locator);
+    $element = $this->getterHelper('/session/:sessionId/element', '', 'POST', $variables, 'ELEMENT', TRUE);
+    $message = $message !== '' ? $message : "Found element using locator $locator.";
+    $this->assertTrue(is_object($element) && is_a($element, 'SeleniumWebElement'), $message, "Selenium WebDriver: {$this->browser}");
   }
 
   /**
-   * Asserts that no field exists with the given name or ID.
+   * Asserts that no field exists with the given locator.
    *
-   * @param string $field
-   *   Name or id of field to assert.
+   * @param string $locator
+   *   The locator to use to try to find the field.
    * @param string $message
    *   Message to display.
-   * @param string $group
-   *   The group this message belongs to.
    *
    * @return bool
    *   TRUE on pass, FALSE on fail.
    */
-  protected function assertNoField($field, $message = '', $group = 'Other') {
-    try {
-      $element = $this->getElement("name=$field");
-    }
-    catch (Exception $e) {
-      try {
-        $element = $this->getElement("id=$field");
-      }
-      catch (Exception $e) {
-        $element = FALSE;
-      }
-    }
-    return $this->assertTrue(empty($element), $message ? $message : t('Field %locator not found', array('%locator' => $field)), $group);
+  protected function assertNoElement($locator, $message = '') {
+    $variables = $this->driver->parseLocator($locator);
+    $element = $this->getterHelper('/session/:sessionId/element', '', 'POST', $variables, 'ELEMENT', TRUE);
+    $message = $message !== '' ? $message : "No element found using locator $locator.";
+    $this->assertFalse($element, $message, "Selenium WebDriver: {$this->browser}");
   }
 
   /**
@@ -539,16 +453,14 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    *   Which link to assert, if there are multiple.
    * @param string $message
    *   The message to pass to the test results.
-   * @param string $group
-   *   The group that the test results belong to.
    *
    * @return bool
    *   TRUE on success, or FALSE on failure.
    */
-  protected function assertLink($label, $index = 0, $message = '', $group = 'Other') {
+  protected function assertLink($label, $index = 0, $message = '') {
     $links = $this->waitForElements('link=' . $label);
     $message = ($message ? $message : t('Link with label %label found.', array('%label' => $label)));
-    return $this->assert(isset($links[$index]), $message, $group);
+    return $this->assertTrue(isset($links[$index]), $message, "Selenium WebDriver: {$this->browser}");
   }
 
   /**
@@ -576,18 +488,9 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
 
     $link_element = $links[$index];
 
-    // Get current and target urls.
-    $url_before = $this->getUrl();
-    $url_target = $this->getElementAttributeValue($link_element, 'href');
-
-    $this->assertTrue(isset($links[$index]), t('Clicked link %label (@url_target) from @url_before', array(
-      '%label' => $label,
-      '@url_target' => $url_target,
-      '@url_before' => $url_before,
-    )), t('Browser'));
-
     // Click on element;
     $this->clickElement($link_element);
+    $this->waitForElements('css=body');
   }
 
   /**
@@ -599,16 +502,14 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    *   Link position counting from zero.
    * @param string $message
    *   The message to display.
-   * @param string $group
-   *   The group this message belongs to.
    *
    * @return bool
    *   TRUE if the assertion succeeded, FALSE otherwise.
    */
-  protected function assertNoLink($label, $index = 0, $message = '', $group = 'Other') {
+  protected function assertNoLink($label, $index = 0, $message = '') {
     $links = $this->waitForElements('link=' . $label);
-    $message = ($message ? $message : t('Link with label %label not found.', array('%label' => $label)));
-    return $this->assert(!isset($links[$index]), $message, $group);
+    $message = ($message ? $message : t('Link with label %label found.', array('%label' => $label)));
+    return $this->assertFalse(isset($links[$index]), $message, "Selenium WebDriver: {$this->browser}");
   }
 
   /**
@@ -619,17 +520,15 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    * @param int $index
    *   Link position counting from zero.
    * @param string $message
-   *   The essage to display.
-   * @param string $group
-   *   The group this message belongs to.
+   *   The message to display.
    *
    * @return bool
    *   TRUE if the assertion succeeded, FALSE otherwise.
    */
-  protected function assertLinkByHref($href, $index = 0, $message = '', $group = 'Other') {
-    $links = $this->getAllElements("//a[contains(@href, '$href')]");
+  protected function assertLinkByHref($href, $index = 0, $message = '') {
+    $links = $this->getAllElements("//a[contains(@href, '$href')]", TRUE);
     $message = ($message ? $message : t('Link containing href %href found.', array('%href' => $href)));
-    return $this->assert(isset($links[$index]), $message, $group);
+    return $this->assertTrue(isset($links[$index]), $message, "Selenium WebDriver: {$this->browser}");
   }
 
   /**
@@ -641,20 +540,51 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    *   Link position counting from zero.
    * @param string $message
    *   The message to display.
-   * @param string $group
-   *   The group this message belongs to.
    *
    * @return bool
    *   TRUE if the assertion succeeded, FALSE otherwise.
    */
-  protected function assertNoLinkByHref($href, $index = 0, $message = '', $group = 'Other') {
-    $links = $this->getAllElements("//a[contains(@href, '$href')]");
+  protected function assertNoLinkByHref($href, $index = 0, $message = '') {
+    $links = $this->getAllElements("//a[contains(@href, '$href')]", TRUE);
     $message = ($message ? $message : t('Link containing href %href not found.', array('%href' => $href)));
-    return $this->assert(!isset($links[$index]), $message, $group);
+    return $this->assertFalse(isset($links[$index]), $message, "Selenium WebDriver: {$this->browser}");
   }
 
   /**
-   * Asserts that a select option in the current page is checked.
+   * Option assertion helper.
+   */
+  protected function assertOptionSelectedHelper($locator, $option) {
+    $selected = FALSE;
+    if (is_string($locator)) {
+      $element = $this->getElement($locator);
+      if (!is_a($element, 'SeleniumWebElement')) {
+        return FALSE;
+      }
+    }
+    else if (is_a($locator, 'SeleniumWebElement')) {
+      $element = $locator;
+    }
+    else {
+      $this->fail("Locator passed in is neither a valid locator or a SeleniumWebElement.");
+      return FALSE;
+    }
+
+    // Determine if the element passed in is actually a select element.
+    $is_select = $this->getElementTagName($element) == 'select';
+    if ($is_select) {
+      $selected_options = $this->getSelectedElement($element);
+      foreach ($selected_options as $selected_option) {
+        if ($this->getElementText($selected_option) == $option) {
+          $selected = TRUE;
+          break;
+        }
+      }
+    }
+    return $selected;
+  }
+
+  /**
+   * Asserts that an option on the current page is selected.
    *
    * @param string|SeleniumWebElement $locator
    *   The locator for the select element, or the actual SeleniumWebElement to
@@ -666,34 +596,12 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    *
    * @return bool
    *   TRUE on pass, FALSE on fail.
-   *
-   * @todo $id is unusable.
    */
   protected function assertOptionSelected($locator, $option, $message = '') {
-    $selected = FALSE;
-    if (!is_object($locator)) {
-      $element = $this->getElement($locator);
-    }
-    else {
-      $element = $locator;
-    }
-    $is_select = $element && $this->getElementTagName($element) == 'select';
-    if ($is_select) {
-      $id = $this->getElementAttributeValue($element, 'id');
-      $message = $message ? $message : t('Option @option for field @id is selected.', array('@option' => $option, '@id' => $id));
-      $selected_options = $this->getSelectedElement($element);
-      foreach ($selected_options as $selected_option) {
-        if ($this->getElementText($selected_option) == $option) {
-          $selected = TRUE;
-          break;
-        }
-      }
-    }
-    else {
-      $message = t('There is no element with locator @locator or element is not select list.', array('@locator' => $locator));
-    }
-
-    return $this->assertTrue($is_select && $selected, $message, t('Browser'));
+    $is_selected = $this->assertOptionSelectedHelper($locator, $option);
+    $locator = is_a($locator, 'SeleniumWebElement') ? $locator->id : $locator;
+    $message = $message ? $message : t('Option @option for field @id is selected.', array('@option' => $option, '@id' => $locator));
+    return $this->assertTrue($is_selected, $message, "Selenium WebDriver: {$this->browser}");
   }
 
   /**
@@ -711,30 +619,10 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    *   TRUE on pass, FALSE on fail.
    */
   protected function assertNoOptionSelected($locator, $option, $message = '') {
-    $selected = FALSE;
-    if (!is_object($locator)) {
-      $element = $this->getElement($locator);
-    }
-    else {
-      $element = $locator;
-    }
-    $is_select = $element && $this->getElementTagName($element) == 'select';
-    if ($is_select) {
-      $id = $this->getElementAttributeValue($element, 'id');
-      $message = $message ? $message : t('Option @option for field @id is not selected.', array('@option' => $option, '@id' => $id));
-      $selected_options = $this->getSelectedElement($element);
-      foreach ($selected_options as $selected_option) {
-        if ($this->getElementText($selected_option) == $option) {
-          $selected = TRUE;
-          break;
-        }
-      }
-    }
-    else {
-      $message = t('There is no element with locator @locator or element is not select list.', array('@locator' => $locator));
-    }
-
-    return $this->assertTrue($is_select && !$selected, $message, t('Browser'));
+    $is_selected = $this->assertOptionSelectedHelper($locator, $option);
+    $locator = is_a($locator, 'SeleniumWebElement') ? $locator->id : $locator;
+    $message = $message ? $message : t('Option @option for field @id is unselected.', array('@option' => $option, '@id' => $locator));
+    return $this->assertFalse($is_selected, $message, "Selenium WebDriver: {$this->browser}");
   }
 
   /**
@@ -765,7 +653,8 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
       $message = t('There is no element with locator @locator or element is not checkbox.', array('@locator' => $locator));
     }
 
-    return $this->assertTrue($is_checkbox && $this->isElementSelected($element), $message, t('Browser'));
+    $selected = $this->elementGetterHelper($element, '/selected', '', 'GET', NULL, NULL, TRUE);
+    return $this->assertTrue($selected, $message, t('Browser'));
   }
 
   /**
@@ -790,13 +679,14 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
     $is_checkbox = $element && ($this->getElementTagName($element) == 'checkbox' || $this->getElementAttributeValue($element, 'type') == 'checkbox');
     if ($is_checkbox) {
       $id = $this->getElementAttributeValue($element, 'id');
-      $message = $message ? $message : t('Checkbox field @id is not checked.', array('@id' => $id));
+      $message = $message ? $message : t('Checkbox field @id is checked.', array('@id' => $id));
     }
     else {
       $message = t('There is no element with locator @locator or element is not checkbox.', array('@locator' => $locator));
     }
 
-    return $this->assertTrue($is_checkbox && !$this->isElementSelected($element), $message, t('Browser'));
+    $selected = $this->elementGetterHelper($element, '/selected', '', 'GET', NULL, NULL, TRUE);
+    return $this->assertFalse($selected, $message, t('Browser'));
   }
 
   /**
@@ -818,7 +708,7 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    */
   protected function assertNoDuplicateIds($message = '', $group = 'Other', $ids_to_skip = array()) {
     try {
-      $elements = $this->getAllElements("//*[@id]");
+      $elements = $this->getAllElements("//*[@id]", TRUE);
       $status = TRUE;
       foreach ($elements as $element) {
         $id = (string) $this->getElementAttributeValue($element, 'id');
@@ -836,118 +726,6 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
   }
 
   /**
-   * Asserts that a field exists in the page with the given name and value.
-   *
-   * @param string $name
-   *   The name of the field to assert.
-   * @param string $value
-   *   The value of the field to assert.
-   * @param string $message
-   *   The message to display.
-   * @param string $group
-   *   The group this message belongs to.
-   *
-   * @return bool
-   *   TRUE on pass, FALSE on fail.
-   */
-  protected function assertFieldByName($name, $value = '', $message = '', $group = 'Other') {
-    try {
-      $element = $this->getElement("name=$name");
-      if ($value) {
-        $element = $this->elementValue($element, $value);
-      }
-    }
-    catch (Exception $e) {
-      $element = FALSE;
-    }
-    return $this->assertTrue(!empty($element), $message ? $message : t('Field found by name'), $group);
-  }
-
-  /**
-   * Asserts that no field exists in the page with the given name and value.
-   *
-   * @param string $name
-   *   The name of the field to assert.
-   * @param string $value
-   *   The value of the field to assert.
-   * @param string $message
-   *   The message to display.
-   * @param string $group
-   *   The group this message belongs to.
-   *
-   * @return bool
-   *   TRUE on pass, FALSE on fail.
-   */
-  protected function assertNoFieldByName($name, $value = '', $message = '', $group = 'Other') {
-    try {
-      $element = $this->getElement("name=$name");
-      if ($value) {
-        $element = $this->elementValue($element, $value);
-      }
-    }
-    catch (Exception $e) {
-      $element = FALSE;
-    }
-    return $this->assertTrue(empty($element), $message ? $message : t('Field found by name'), $group);
-  }
-
-  /**
-   * Asserts that a field exists in the page with the given ID and value.
-   *
-   * @param string $id
-   *   The ID of the field to assert.
-   * @param string $value
-   *   The value of the field to assert.
-   * @param string $message
-   *   The message to display.
-   * @param string $group
-   *   The group this message belongs to.
-   *
-   * @return bool
-   *   TRUE on pass, FALSE on fail.
-   */
-  protected function assertFieldById($id, $value = '', $message = '', $group = 'Other') {
-    try {
-      $element = $this->getElement("id=$id");
-      if ($value) {
-        $element = $this->elementValue($element, $value);
-      }
-    }
-    catch (Exception $e) {
-      $element = FALSE;
-    }
-    return $this->assertTrue(!empty($element), $message ? $message : t('Field found by id'), $group);
-  }
-
-  /**
-   * Asserts that no field exists in the page with the given ID and value.
-   *
-   * @param string $id
-   *   The ID of the field to assert.
-   * @param string $value
-   *   The value of the field to assert.
-   * @param string $message
-   *   The message to display.
-   * @param string $group
-   *   The group this message belongs to.
-   *
-   * @return bool
-   *   TRUE on pass, FALSE on fail.
-   */
-  protected function assertNoFieldById($id, $value = '', $message = '', $group = 'Other') {
-    try {
-      $element = $this->getElement("id=$id");
-      if ($value) {
-        $element = $this->elementValue($element, $value);
-      }
-    }
-    catch (Exception $e) {
-      $element = FALSE;
-    }
-    return $this->assertTrue(empty($element), $message ? $message : t('Field found by id'), $group);
-  }
-
-  /**
    * Checks that the value of a given element equals the given value.
    *
    * @param SeleniumWebElement $element
@@ -958,7 +736,7 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    * @returns bool
    *   Whether or not the given value exists on the element.
    */
-  protected function elementValue($element, $value) {
+  protected function elementHasValue($element, $value) {
     $element_text = NULL;
     $element_value = NULL;
     if ($this->getElementTagName($element) == 'select') {
@@ -969,34 +747,6 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
       $element_value = trim($this->getElementText($element));
     }
     return $value == $element_value || $value == $element_text;
-  }
-
-  /**
-   * Asserts that a field exists in the current page by the given XPath.
-   *
-   * @param string $xpath
-   *   XPath used to find the field.
-   * @param string $value
-   *   An optional value to assert on the field.
-   * @param string $message
-   *   The message to display.
-   * @param string $group
-   *   The group this message belongs to.
-   *
-   * @return bool
-   *   TRUE on pass, FALSE on fail.
-   */
-  protected function assertFieldByXPath($xpath, $value = NULL, $message = '', $group = 'Other') {
-    try {
-      $element = $this->getElement($xpath);
-      if ($value) {
-        $element = $this->elementValue($element, $value);
-      }
-    }
-    catch (Exception $e) {
-      $element = FALSE;
-    }
-    return $this->assertTrue(!empty($element), $message ? $message : t('Field found by Xpath'), $group);
   }
 
   /**
@@ -1032,21 +782,21 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
       $this->openUrl($path);
     }
 
-    // Disable javascripts that hide elements.
+    // Disable javascript that hides elements.
     $this->disableJs($disable_js);
 
     // Find form elements and set the values.
     foreach ($edit as $selector => $value) {
       $element = $this->getElement("name=$selector");
-      // Type of input element. Can be textarea, select or input. If input,
-      // we need to check 'type' property.
       $type = $this->getElementTagName($element);
       if ($type == 'input') {
         $type = $this->getElementAttributeValue($element, 'type');
       }
+      // Decide what to do with the element based on its type.
       switch ($type) {
         case 'text':
         case 'textarea':
+        case 'password':
           // Clear element first then send text data.
           $this->clearElement($element);
           $this->sendKeysToElement($element, $value);
@@ -1105,7 +855,7 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
   public function clickSubmitButton($value) {
     $elements = $this->getAllElements('name=op');
     if (empty($elements)) {
-      $this->fail('No submit button elements found on page.', 'Selenium WebDriver');
+      $this->fail('No submit button elements found on page.', "Selenium WebDriver: {$this->browser}");
       return FALSE;
     }
     foreach ($elements as $element) {
@@ -1115,7 +865,7 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
         return TRUE;
       }
     }
-    $this->fail("No submit button element found on the page with label $value.", 'Selenium WebDriver');
+    $this->fail("No submit button element found on the page with label $value.", "Selenium WebDriver: {$this->browser}");
     return FALSE;
   }
 
@@ -1252,21 +1002,27 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    *   Variables to be passed to the executor; defaults to NULL for none.
    * @param null|string $attribute
    *   An attribute to select from the JSON value array.
+   * @param bool $assert
+   *   Whether or not we are using this getter to assert something (so we can
+   *   squash errors in favour of the asserting method).
    *
    * @returns array|bool
    *   The value array from the response, or FALSE on failure.
    */
-  protected function getterHelper($path, $message, $method = 'GET', $variables = NULL, $attribute = NULL) {
+  protected function getterHelper($path, $message, $method = 'GET', $variables = NULL, $attribute = NULL, $assert = FALSE) {
     try {
       $response = $this->driver->execute($method, $path, $variables);
       $result = $this->driver->getJSONValue($response, $attribute);
     }
     catch (Exception $e) {
-      $this->fail("$message: $e", "Selenium WebDriver");
+      if (!$assert) {
+        $message = $this->verbose ? "$message: $e" : $message;
+        $this->fail("$message.", "Selenium WebDriver: {$this->browser}");
+      }
       return FALSE;
     }
     if ($this->verbose) {
-      $this->pass("$message.", "Selenium WebDriver");
+      $this->pass("$message.", "Selenium WebDriver: {$this->browser}");
     }
     return $result;
   }
@@ -1318,10 +1074,10 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
       $result = $this->getElementText($this->getElement("tag name=body"));
     }
     catch (Exception $e) {
-      $this->fail("Failed to get the text of the body: $e", "Selenium WebDriver");
+      $this->fail("Failed to get the text of the body: $e", "Selenium WebDriver: {$this->browser}");
       return FALSE;
     }
-    $this->pass("Got the text of the body.", "Selenium WebDriver");
+    $this->pass("Got the text of the body.", "Selenium WebDriver: {$this->browser}");
     return $result;
   }
 
@@ -1373,14 +1129,12 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    */
   public function waitForElements($locator, $seconds = 10) {
     $elements = NULL;
-    $max_seconds = $seconds;
     while ($seconds > 0 && empty($elements)) {
       $elements = $this->getAllElements($locator);
       sleep(1);
       $seconds--;
     }
     if (empty($seconds)) {
-      $this->fail("Failed to find any elements within $max_seconds seconds using locator $locator.", "Selenium WebDriver");
       return FALSE;
     }
     else {
@@ -1417,7 +1171,7 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
       $seconds--;
     }
     if (empty($seconds)) {
-      $this->fail("Failed to find any visible elements within $seconds seconds using locator $locator.", "Selenium WebDriver");
+      $this->fail("Failed to find any visible elements within $seconds seconds using locator $locator.", "Selenium WebDriver: {$this->browser}");
       return FALSE;
     }
     else {
@@ -1432,13 +1186,16 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    *
    * @param string $locator
    *   The method for locating the elements.
+   * @param bool $assert
+   *   Whether or not the method was called as an assert (so we can squash the
+   *   potential error from getterHelper in favour of the assert).
    *
    * @return SeleniumWebElement[]|bool
    *   All elements found via the locator method, or FALSE on failure.
    */
-  public function getAllElements($locator) {
+  public function getAllElements($locator, $assert = FALSE) {
     $variables = $this->driver->parseLocator($locator);
-    $element_ids = $this->getterHelper('/session/:sessionId/elements', "Found elements using locator $locator", 'POST', $variables, 'ELEMENT');
+    $element_ids = $this->getterHelper('/session/:sessionId/elements', "Found elements using locator $locator", 'POST', $variables, 'ELEMENT', $assert);
     if ($element_ids !== FALSE) {
       $elements = array();
       module_load_include('inc', 'selenium', 'includes/selenium_web_element');
@@ -1534,7 +1291,7 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
       if (is_null($property)) {
         $property = 'all properties';
       }
-      return $this->fail("Failed to get property: $property from cookie: $name.", "Selenium WebDriver");
+      return $this->fail("Failed to get property: $property from cookie: $name.", "Selenium WebDriver: {$this->browser}");
     }
     return FALSE;
   }
@@ -1577,10 +1334,10 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
       $this->driver->execute($http_method, $path, $variables);
     }
     catch (Exception $e) {
-      $this->fail("$message: $e", "Selenium WebDriver");
+      $this->fail("$message: $e", "Selenium WebDriver: {$this->browser}");
       return FALSE;
     }
-    $this->pass("$message.", "Selenium WebDriver");
+    $this->pass("$message.", "Selenium WebDriver: {$this->browser}");
     return TRUE;
   }
 
@@ -1693,7 +1450,9 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    */
   public function selectWindow($window_title) {
     $variables = array('name' => $window_title);
-    return $this->setterHelper('/session/:sessionId/window', "Changed focus to window $window_title", $variables);
+    $result = $this->setterHelper('/session/:sessionId/window', "Changed focus to window $window_title", $variables);
+    $this->appendVerboseMessage();
+    return $result;
   }
 
   /**
@@ -1879,13 +1638,20 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
   /**
    * Move the cursor relative to the position of the mouse or an element.
    *
-   * @param int $right
+   * NOTE: moving a cursor to an offset doesn't always produce consistent
+   * behaviour between browsers, even when offsetting to the known coordinates
+   * of an element. It is ALWAYS recommended to move to an element instead of
+   * an offset, if possible, as Selenium will always place the cursor in the
+   * centre of the element rather than to some unknown position within or near
+   * an element returned by requesting its coordinates.
+   *
+   * @param int $x
    *   The number of pixels to move the cursor to the right. Use negative
    *   numbers to move the cursor left.
-   * @param int $down
+   * @param int $y
    *   The number of pixels to move the cursor down. Use negative numbers to
    *   move the cursor down.
-   * @param string $element
+   * @param SeleniumWebElement|null $element
    *   An optional element ID to move relative from.
    *
    * @returns bool
@@ -1893,13 +1659,14 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    *
    * @see http://code.google.com/p/selenium/wiki/JsonWireProtocol#/session/:sessionId/moveto
    */
-  public function moveCursor($right, $down, $element = NULL) {
+  public function moveCursor($x, $y, $element = NULL) {
+    $element = is_object($element) && isset($element->id) ? $element->id : NULL;
     $variables = array(
-      "xoffset" => $right,
-      "yoffset" => $down,
+      "xoffset" => $x,
+      "yoffset" => $y,
       "element" => $element,
     );
-    $message = is_string($element) ? "Offset the cursor by $right, $down pixels from element $element" : "Offset the cursor by $right, $down pixels";
+    $message = is_string($element) ? "Offset the cursor by $x, $y pixels from element $element" : "Offset the cursor by $x, $y pixels";
     return $this->setterHelper('/session/:sessionId/moveto', $message, $variables);
   }
 
@@ -1916,33 +1683,30 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    *   The name of the given button.
    */
   protected function getMouseButtonName($button) {
-    switch ($button) {
-      case 0:
-        return 'left';
-
-      case 1:
-        return 'middle';
-
-      case 2:
-        return 'right';
-
-      default:
-        throw new Exception("Given mouse button $button is not a valid mouse button.");
+    $mappings = array(
+      0 => 'left',
+      1 => 'middle',
+      2 => 'right',
+    );
+    if (array_key_exists($button, $mappings)) {
+      return $mappings[$button];
     }
+    throw new Exception("Given mouse button $button is not a valid mouse button.");
   }
 
   /**
    * Click the given mouse button.
    *
    * @param int $button
-   *   The button to click (0 for left, 1 for middle, 2 for right).
+   *   The button to click (0 for left, 1 for middle, 2 for right). Defaults to
+   *   a left-click.
    *
    * @returns bool
    *   TRUE on pass, FALSE on failure.
    *
    * @see http://code.google.com/p/selenium/wiki/JsonWireProtocol#/session/:sessionId/click
    */
-  public function mouseClickButton($button) {
+  public function mouseClickButton($button = 0) {
     $name = $this->getMouseButtonName($button);
     $variables = array("button" => $button);
     return $this->setterHelper('/session/:sessionId/click', "Clicked the $name mouse button", $variables);
@@ -1983,15 +1747,33 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
   }
 
   /**
-   * Double click the left mouse button.
+   * Double click a mouse button.
+   *
+   * @param int $button
+   *   The button to double-click (0 for left, 1 for middle, 2 for right).
+   *   Defaults to 0 for left.
    *
    * @returns bool
    *   TRUE on pass, FALSE on failure.
    *
-   * @see http://code.google.com/p/selenium/wiki/JsonWireProtocol#/session/:sessionId/doubleclick
+   * @see http://code.google.com/p/selenium/wiki/JsonWireProtocol#/session/:sessionId/click
    */
-  public function mouseClickDouble() {
-    return $this->setterHelper('/session/:sessionId/doubleclick', "Double-clicked the left mouse button");
+  public function mouseClickDouble($button = 0) {
+    // There is a native JSONWire endpoint, /session/:sessionId/doubleclick,
+    // which is supposed to be able to produce this functionality. It is too
+    // slow, however, for some browsers, and so we produce it manually here.
+    $name = $this->getMouseButtonName($button);
+    $variables = array("button" => $button);
+    // Make a first pass; if we fail here, don't bother with the second click.
+    try {
+      $this->driver->execute('POST', '/session/:sessionId/click', $variables);
+    }
+    catch (Exception $e) {
+      $this->fail("Double-clicked the $name mouse button: $e", "Selenium WebDriver: {$this->browser}");
+      return FALSE;
+    }
+    usleep(300000);
+    return $this->setterHelper('/session/:sessionId/click', "Double-clicked the $name mouse button", $variables);
   }
 
   /**
@@ -2065,12 +1847,15 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    *   An array of variables to use; use NULL for none.
    * @param null|string $attribute
    *   An attribute to pull from the JSON value array; use NULL for none.
+   * @param bool $assert
+   *   Whether the call to this method came from an assert (so we can squash
+   *   errors from this method in favour of ones from the assert).
    *
    * @return mixed|bool|null
    *   The result from the response, or FALSE on failure. NULL if the element
    *   passed in was invalid.
    */
-  protected function elementGetterHelper($element, $path, $message, $http_method = 'GET', $variables = NULL, $attribute = NULL) {
+  protected function elementGetterHelper($element, $path, $message, $http_method = 'GET', $variables = NULL, $attribute = NULL, $assert = FALSE) {
     if (!($element instanceof SeleniumWebElement)) {
       // If the element passed in was invalid, the message saying so has
       // already been passed through, and we don't need to take orders.
@@ -2083,32 +1868,23 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
       $message = str_replace('%element%', "{$locator['attribute']}: {$locator['value']}", $message);
     }
     catch (Exception $e) {
-      $this->fail("$message: $e", 'Selenium WebDriver');
+      if ($assert) {
+        $message = $this->verbose ? "$message: $e" : "$message.";
+        $this->fail($message, "Selenium WebDriver: {$this->browser}");
+      }
       return FALSE;
     }
     if ($this->verbose) {
-      $this->pass("$message.", 'Selenium WebDriver');
+      $this->pass("$message.", "Selenium WebDriver: {$this->browser}");
     }
     return $result;
   }
 
   /**
-   * Describes the identified element.
-   *
-   * @param SeleniumWebElement $element
-   *   The element to describe.
-   *
-   * @return array
-   *   The value array from the response.
-   *
-   * @see http://code.google.com/p/selenium/wiki/JsonWireProtocol#/session/:sessionId/element/:id
-   */
-  public function describeElement($element) {
-    return $this->elementGetterHelper($element, '', "Described element (%element%)");
-  }
-
-  /**
    * Returns the visible text for the element.
+   *
+   * For the text written in a text, password or textarea field, use
+   * getElementValue.
    *
    * @param SeleniumWebElement $element
    *   The element to get the text for.
@@ -2124,6 +1900,8 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
 
   /**
    * Query for the value of an element, as determined by its value attribute.
+   *
+   * This includes text written in a text, password or textarea field.
    *
    * @param SeleniumWebElement $element
    *   The element to get the value of.
@@ -2168,7 +1946,10 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
   }
 
   /**
-   * Determine status of an OPTION element, or a checkbox/radio INPUT element.
+   * Determine status of an OPTION element, or a checkbox INPUT element.
+   *
+   * This should work with radio elements, however this is not correctly
+   * implemented at the moment by Selenium.
    *
    * @param SeleniumWebElement $element
    *   The element to check the status of.
@@ -2183,10 +1964,12 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
   }
 
   /**
-   * Search for an element on the page, starting from the identified element.
+   * Search for a child element on the page, starting from the given element.
    *
    * The located element will be returned as a SeleniumWebElement JSON object.
    * Each locator must return the first matching element located in the DOM.
+   * This means that, for example, using an Xpath statement starting with // may
+   * return an element that is not a child of the given element.
    *
    * @param SeleniumWebElement $element
    *   The element to search from.
@@ -2200,29 +1983,31 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    */
   public function getNextElement($element, $locator) {
     $variables = $this->driver->ParseLocator($locator);
-    $next_element_id = $this->elementGetterHelper($element, '/element', "Got next element from element (%element%)", 'POST', $variables, 'ELEMENT');
+    $next_element_id = $this->elementGetterHelper($element, '/element', "Got next element from element (%element%) using locator $locator", 'POST', $variables, 'ELEMENT');
     return new SeleniumWebElement($this->driver, $next_element_id, $locator);
   }
 
   /**
-   * Search for elements on the page, starting from the identified element.
+   * Search for all child elements on the page, starting from the given element.
    *
-   * The located elements will be returned as a SeleniumWebElement JSON objects.
-   * Elements should be returned in the order located in the DOM.
+   * The located elements will be returned as SeleniumWebElement JSON objects.
+   * Each locator must return the first matching element located in the DOM.
+   * This means that, for example, using an Xpath statement starting with // may
+   * return elements that are not children of the given element.
    *
    * @param SeleniumWebElement $element
    *   The element to search from.
    * @param string $locator
-   *   The locator to use when getting all next elements.
+   *   The locator to use when getting the next element.
    *
    * @return SeleniumWebElement[]
-   *   An array of SeleniumWebElement JSON objects for the located elements.
+   *   An array of SeleniumWebElement JSON objects for the located element.
    *
    * @see http://code.google.com/p/selenium/wiki/JsonWireProtocol#/session/:sessionId/element/:id/elements
    */
   public function getAllNextElements($element, $locator) {
-    $variables = $this->driver->ParseLocator($locator);
-    $next_element_ids = $this->elementGetterHelper($element, '/elements', "Got all next elements from element (%element%)", 'POST', $variables, 'ELEMENT');
+    $variables = $this->driver->parseLocator($locator);
+    $next_element_ids = $this->elementGetterHelper($element, '/elements', "Got all next elements from element (%element%) using locator $locator", 'POST', $variables, 'ELEMENT');
     $all_elements = array();
     foreach ($next_element_ids as $element_id) {
       $all_elements[] = new SeleniumWebElement($this->driver, $element_id, $locator);
@@ -2267,16 +2052,16 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    *
    * @param SeleniumWebElement $element
    *   The element to compare from.
-   * @param string $other_element_id
-   *   The ID of the element to check against.
+   * @param SeleniumWebElement $other_element
+   *   The element to check against.
    *
    * @return bool
-   *   Whether the two IDs refer to the same element.
+   *   Whether the two elements given refer to the same element.
    *
    * @see http://code.google.com/p/selenium/wiki/JsonWireProtocol#/session/:sessionId/element/:id/equals/:other
    */
-  public function elementIsSameElementAs($element, $other_element_id) {
-    return $this->elementGetterHelper($element, "/equals/$other_element_id", "Compared element (%element%) to element with ID $other_element_id");
+  public function elementIsSameElementAs($element, $other_element) {
+    return $this->elementGetterHelper($element, "/equals/{$other_element->id}", "Compared element (%element%) to element with ID {$other_element->id}");
   }
 
   /**
@@ -2289,7 +2074,8 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    *   The element to locate on the page.
    *
    * @return array
-   *   The coordinates of the element on the page, as array(int x, int y).
+   *   An associative array containing four elements, two of which ('x' and 'y')
+   *   are the x and y coordinates of the element.
    *
    * @see http://code.google.com/p/selenium/wiki/JsonWireProtocol#/session/:sessionId/element/:id/location
    */
@@ -2366,10 +2152,10 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
       $message = str_replace('%element%', "{$locator['attribute']}: {$locator['value']}", $message);
     }
     catch (Exception $e) {
-      $this->fail("$message: $e", "Selenium WebDriver");
+      $this->fail("$message: $e", "Selenium WebDriver: {$this->browser}");
       return FALSE;
     }
-    $this->pass("$message.", "Selenium WebDriver");
+    $this->pass("$message.", "Selenium WebDriver: {$this->browser}");
     return TRUE;
   }
 
@@ -2388,7 +2174,10 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    * @see http://code.google.com/p/selenium/wiki/JsonWireProtocol#/session/:sessionId/element/:id/submit
    */
   public function submitElement($element) {
-    return $this->elementSetterHelper($element, '/submit', "Submitted form from element (%element%)");
+    $result = $this->elementSetterHelper($element, '/submit', "Submitted form from element (%element%)");
+    $this->waitForElements('css=body');
+    $this->appendVerboseMessage();
+    return $result;
   }
 
   /**
@@ -2403,7 +2192,7 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    * @see http://code.google.com/p/selenium/wiki/JsonWireProtocol#/session/:sessionId/element/:id/click
    */
   public function clickElement($element) {
-    return $this->elementGetterHelper($element, '/click', "Clicked on element (%element%)");
+    return $this->elementSetterHelper($element, '/click', "Clicked on element (%element%)");
   }
 
   /**
@@ -2433,25 +2222,7 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    * @see http://code.google.com/p/selenium/wiki/JsonWireProtocol#/session/:sessionId/element/:id/selected
    */
   public function selectElement($element) {
-    return $this->elementSetterHelper($element, '/selected', "Selected element (%element%)");
-  }
-
-  /**
-   * Toggle whether an OPTION or checkbox/radio INPUT element is selected.
-   *
-   * Uses the elementGetterHelper, as the result from this is useful for knowing
-   * whether or not the element is now selected.
-   *
-   * @param SeleniumWebElement $element
-   *   The element to toggle.
-   *
-   * @return bool
-   *   Whether the element is selected after toggling its state.
-   *
-   * @see http://code.google.com/p/selenium/wiki/JsonWireProtocol#/session/:sessionId/element/:id/toggle
-   */
-  public function toggleElement($element) {
-    return $this->elementGetterHelper($element, '/toggle', "Toggled element (%element%)", 'POST');
+    return $this->elementSetterHelper($element, '/select', "Selected element (%element%)");
   }
 
   /**
@@ -2501,7 +2272,8 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
   }
 
   /*
-   * Functions for getting attributes/parameters of <select> elements.
+   * Functions for getting attributes/parameters of <select> and <option>
+   * elements.
    */
 
   /**
@@ -2509,25 +2281,36 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    *
    * The located element will be returned as a SeleniumWebElement JSON object.
    *
+   * NOTE: This should, by all rights, return <option> elements; however, this
+   * functionality is currently broken in Selenium and cannot be used.
+   *
    * @param SeleniumWebElement $element
    *   The element to find the selected option for.
+   * @param string $type
+   *   A string representing the type of element ('select' or 'option').
    *
-   * @return SeleniumWebElement
-   *   A SeleniumWebElement JSON object for the located element.
+   * @return SeleniumWebElement|bool
+   *   A SeleniumWebElement JSON object for the located element, or FALSE if
+   *   none were found.
    */
-  public function getElementSelectedOption($element) {
-    try {
-      // Does not work in IE8.
-      return $this->getNextElement($element, "css=option[selected]");
+  public function getElementSelectedOption($element, $type = 'select') {
+    if ($type == 'select') {
+      $options = $this->getOptions($element);
+      foreach ($options as $option) {
+        if ($this->driver->getJSONValue($option->execute('GET', '/selected')) == TRUE) {
+          return $option;
+        }
+      }
+      return FALSE;
     }
-    catch (Exception $e) {
-      // Doesn't work in IE7.
-      return $this->getNextElement($element, "css=option[selected='selected']");
+    if ($type == 'option') {
+      throw new Exception ("Element type '$type' is improperly implemented in Selenium and cannot be used.");
     }
+    throw new Exception ("Element type '$type' passed in is invalid in use with getElementSelectedOption.");
   }
 
   /**
-   * Search for options for <select> element on the page.
+   * Search for options for a select or radio element on the page.
    *
    * Starts from the identified element. The located elements will be returned
    * as a SeleniumWebElement JSON object. Elements should be returned in the
@@ -2535,12 +2318,21 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    *
    * @param SeleniumWebElement $element
    *   The element to get options for.
+   * @param string $type
+   *   The type of element ('select' or 'radio').
    *
    * @return SeleniumWebElement[]
    *   A list of SeleniumWebElement JSON objects for the located elements.
    */
-  public function getOptions($element) {
-    return $this->getAllNextElements($element, "tag name=option");
+  public function getOptions($element, $type = 'select') {
+    $locators = array(
+      'select' => 'tag=option',
+      'radio' => 'xpath=.//input[@type="radio"]',
+    );
+    if (array_key_exists($type, $locators)) {
+      return $this->getAllNextElements($element, $locators[$type]);
+    }
+    throw new Exception ("Element type '$type' passed in is invalid in use with getOptions.");
   }
 
   /**
@@ -2561,8 +2353,8 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    *   TRUE on success, or FALSE on failure.
    */
   public function selectElementOptionByLabel($element, $label) {
-    $option_element = $this->getNextElement($element, "xpath=//option[text()='$label']");
-    return $this->selectElement($option_element);
+    $element = $this->getNextElement($element, "xpath=//option[text()='$label']");
+    return $this->clickElement($element);
   }
 
   /**
@@ -2579,8 +2371,8 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    *   TRUE on success, or FALSE on failure.
    */
   public function selectElementOptionByValue($element, $value) {
-    $option_element = $this->getNextElement($element, "xpath=//option[@value='$value']");
-    return $this->selectElement($option_element);
+    $element = $this->getNextElement($element, "xpath=//option[@value='$value']");
+    return $this->clickElement($element);
   }
 
   /**
@@ -2597,7 +2389,7 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    *   TRUE on success, or FALSE on failure.
    */
   public function selectElementOptionByIndex($element, $index) {
-    $option_element = $this->getNextElement($element, "xpath=//option[$index]");
-    return $this->selectElement($option_element);
+    $element = $this->getNextElement($element, "xpath=//option[$index]");
+    return $this->clickElement($element);
   }
 }

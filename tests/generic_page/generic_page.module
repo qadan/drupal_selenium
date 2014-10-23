@@ -38,6 +38,7 @@ function generic_page_form(array $form, array &$form_state) {
     '#title' => 'Text Field',
     '#title_display' => 'invisible',
   );
+  $random = mt_rand();
   $form = array(
     'generic_page_fieldset' => array(
       '#type' => 'fieldset',
@@ -52,7 +53,7 @@ function generic_page_form(array $form, array &$form_state) {
         ),
         '#options' => array(
           'option_1' => array(
-            'link' => l(t('Option 1'), 'http://www.google.com'),
+            'link' => l(t('Option 1'), 'http://google.com'),
             'textfield' => array('data' => array_merge($textfield, array('#name' => 'text_field_1'))),
           ),
           'option_2' => array(
@@ -82,6 +83,15 @@ function generic_page_form(array $form, array &$form_state) {
     ),
     'markup' => array(
       '#markup' => l(t('Markup'), 'http://google.com', array('attributes' => array('target' => '_blank'))),
+    ),
+    'select' => array(
+      '#type' => 'select',
+      '#title' => t('Select'),
+      '#description' => $random,
+      '#options' => array(
+        'default' => t('Default Value'),
+        'alternate' => t('Alternate'),
+      ),
     ),
   );
   return $form;

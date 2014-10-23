@@ -114,7 +114,7 @@ class SeleniumWebElement {
    * Returns the $locator property.
    */
   public function getLocatorParts() {
-    $parts = explode("=", $this->locator);
+    $parts = explode("=", $this->locator, 2);
     return array(
       'attribute' => $parts[0],
       'value' => $parts[1],
