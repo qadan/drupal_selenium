@@ -558,8 +558,6 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    *   use.
    * @param string $option
    *   The option to assert.
-   * @param string $message
-   *   The message to display.
    *
    * @return bool
    *   TRUE if the option is selected, or FALSE otherwise.
