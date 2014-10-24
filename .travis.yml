@@ -23,6 +23,7 @@ before_install:
   - curl "http://selenium-release.storage.googleapis.com/2.44/selenium-server-standalone-2.44.0.jar" > selenium.jar
   - java -jar selenium.jar > /dev/null &
   - sleep 5
+  - $TRAVIS_BUILD_DIR/tests/scripts/travis_setup.sh
   - cd $HOME/drupal-*
   - ln -s $TRAVIS_BUILD_DIR sites/all/modules/drupal_selenium
   - drush -y -u 1 en selenium
