@@ -552,6 +552,17 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
 
   /**
    * Option assertion helper.
+   *
+   * @param string|SeleniumWebElement $locator
+   *   The locator for the select element, or the actual SeleniumWebElement to
+   *   use.
+   * @param string $option
+   *   The option to assert.
+   * @param string $message
+   *   The message to display.
+   *
+   * @return bool
+   *   TRUE if the option is selected, or FALSE otherwise.
    */
   protected function assertOptionSelectedHelper($locator, $option) {
     $selected = FALSE;
@@ -561,7 +572,7 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
         return FALSE;
       }
     }
-    else if (is_a($locator, 'SeleniumWebElement')) {
+    elseif (is_a($locator, 'SeleniumWebElement')) {
       $element = $locator;
     }
     else {
@@ -597,7 +608,7 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    * @return bool
    *   TRUE on pass, FALSE on fail.
    */
-  protected function assertOptionSelected($locator, $option, $message = '') {
+  public function assertOptionSelected($locator, $option, $message = '') {
     $is_selected = $this->assertOptionSelectedHelper($locator, $option);
     $locator = is_a($locator, 'SeleniumWebElement') ? $locator->id : $locator;
     $message = $message ? $message : t('Option @option for field @id is selected.', array('@option' => $option, '@id' => $locator));
@@ -618,7 +629,7 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    * @return bool
    *   TRUE on pass, FALSE on fail.
    */
-  protected function assertNoOptionSelected($locator, $option, $message = '') {
+  public function assertNoOptionSelected($locator, $option, $message = '') {
     $is_selected = $this->assertOptionSelectedHelper($locator, $option);
     $locator = is_a($locator, 'SeleniumWebElement') ? $locator->id : $locator;
     $message = $message ? $message : t('Option @option for field @id is unselected.', array('@option' => $option, '@id' => $locator));
@@ -631,31 +642,40 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    * @param string|SeleniumWebElement $locator
    *   The locator for the select element, or the actual SeleniumWebElement to
    *   use.
-   * @param string $message
-   *   The message to display.
    *
    * @return bool
    *   TRUE on pass, FALSE on fail.
    */
-  protected function assertFieldChecked($locator, $message = '') {
+  protected function assertFieldCheckedHelper($locator) {
     if (!is_object($locator)) {
       $element = $this->getElement($locator);
     }
     else {
       $element = $locator;
     }
-    $is_checkbox = $element && ($this->getElementTagName($element) == 'checkbox' || $this->getElementAttributeValue($element, 'type') == 'checkbox');
-    if ($is_checkbox) {
-      $id = $this->getElementAttributeValue($element, 'id');
-      $message = $message ? $message : t('Checkbox field @id is checked.', array('@id' => $id));
+    if ($element && ($this->getElementTagName($element) == 'checkbox' || $this->getElementAttributeValue($element, 'type') == 'checkbox')) {
+      return $this->elementGetterHelper($element, '/selected', '', 'GET', NULL, NULL, TRUE);
     }
-    else {
-      $message = t('There is no element with locator @locator or element is not checkbox.', array('@locator' => $locator));
-    }
-
-    $selected = $this->elementGetterHelper($element, '/selected', '', 'GET', NULL, NULL, TRUE);
-    return $this->assertTrue($selected, $message, t('Browser'));
+    return $this->fail("Element passed in is not a checkbox.");
   }
+
+  /**
+   * Asserts that a checkbox field in the current page is checked.
+   *
+   * @param string|SeleniumWebElement $locator
+   *   The locator for the select element, or the actual SeleniumWebElement to
+   *   use.
+   * @param string $message
+   *   The message to display.
+   *
+   * @return bool
+   *   TRUE on pass, FALSE on failure.
+   */
+  public function assertFieldChecked($locator, $message = '') {
+    $message = $message !== '' ? $message : t('Checkbox field with locator @id is checked.', array('@id' => $locator));
+    return $this->assertTrue($this->assertFieldCheckedHelper($locator), $message, "Selenium WebDriver: {$this->browser}");
+  }
+
 
   /**
    * Asserts that a checkbox field in the current page is not checked.
@@ -670,23 +690,8 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    *   TRUE on pass, FALSE on fail.
    */
   protected function assertNoFieldChecked($locator, $message = '') {
-    if (!is_object($locator)) {
-      $element = $this->getElement($locator);
-    }
-    else {
-      $element = $locator;
-    }
-    $is_checkbox = $element && ($this->getElementTagName($element) == 'checkbox' || $this->getElementAttributeValue($element, 'type') == 'checkbox');
-    if ($is_checkbox) {
-      $id = $this->getElementAttributeValue($element, 'id');
-      $message = $message ? $message : t('Checkbox field @id is checked.', array('@id' => $id));
-    }
-    else {
-      $message = t('There is no element with locator @locator or element is not checkbox.', array('@locator' => $locator));
-    }
-
-    $selected = $this->elementGetterHelper($element, '/selected', '', 'GET', NULL, NULL, TRUE);
-    return $this->assertFalse($selected, $message, t('Browser'));
+    $message = $message !== '' ? $message : t('Checkbox field with locator @id is unchecked.', array('@id' => $locator));
+    return $this->assertFalse($this->assertFieldCheckedHelper($locator), $message, "Selenium WebDriver: {$this->browser}");
   }
 
   /**
@@ -2304,9 +2309,9 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
       return FALSE;
     }
     if ($type == 'option') {
-      throw new Exception ("Element type '$type' is improperly implemented in Selenium and cannot be used.");
+      throw new Exception("Element type '$type' is improperly implemented in Selenium and cannot be used.");
     }
-    throw new Exception ("Element type '$type' passed in is invalid in use with getElementSelectedOption.");
+    throw new Exception("Element type '$type' passed in is invalid in use with getElementSelectedOption.");
   }
 
   /**
@@ -2332,7 +2337,7 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
     if (array_key_exists($type, $locators)) {
       return $this->getAllNextElements($element, $locators[$type]);
     }
-    throw new Exception ("Element type '$type' passed in is invalid in use with getOptions.");
+    throw new Exception("Element type '$type' passed in is invalid in use with getOptions.");
   }
 
   /**

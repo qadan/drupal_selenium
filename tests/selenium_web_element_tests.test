@@ -60,11 +60,10 @@ class SeleniumWebElementFindTestCase extends DrupalSeleniumWebTestCase {
     $this->assertEqual($this->getElementAttributeValue($this->getActiveElement(), 'type'), 'checkbox', "Active element is the element that was clicked on.");
   }
 
-  /**
-   * It is assumed that if openUrl works, that waitForElements also does. It is
-   * also assumed that if isElementDisplayed works, that waitForVisibleElements
-   * also does.
-   */
+  // It is assumed that if openUrl works, that waitForElements also does. It is
+  // also assumed that if isElementDisplayed works, that waitForVisibleElements
+  // also does.
+
 }
 
 /**
