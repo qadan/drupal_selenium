@@ -20,7 +20,7 @@ before_install:
   - sudo ln -s chromedriver /usr/bin/chromedriver
   - export DISPLAY=:1
   - sh -e /etc/init.d/xvfb start
-  - curl "http://selenium-release.storage.googleapis.com/2.42/selenium-server-standalone-2.42.2.jar" > selenium.jar
+  - curl "http://selenium-release.storage.googleapis.com/2.44/selenium-server-standalone-2.44.0.jar" > selenium.jar
   - java -jar selenium.jar > /dev/null &
   - sleep 5
   - git clone -b 7.x git://github.com/Islandora/islandora.git
@@ -32,4 +32,4 @@ script:
   - $HOME/islandora/tests/scripts/line_endings.sh sites/all/modules/drupal_selenium
   - drush coder-review --reviews=production,security,style,i18n,potx,sniffer selenium
   - phpcpd --names *.module,*.inc,*.test sites/all/modules/drupal_selenium
-  # - drush --uri=http://localhost:8081 test-run "Drupal Selenium Integration"
+  - drush --uri=http://localhost:8081 test-run "Drupal Selenium Integration"
