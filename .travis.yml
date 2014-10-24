@@ -18,10 +18,8 @@ before_install:
   - unzip chromedriver_linux64.zip
   - sudo chmod 755 chromedriver
   - sudo ln -s chromedriver /usr/bin/chromedriver
-  - export DISPLAY=:1
-  - sh -e /etc/init.d/xvfb start
   - curl "http://selenium-release.storage.googleapis.com/2.44/selenium-server-standalone-2.44.0.jar" > selenium.jar
-  - java -jar selenium.jar > /dev/null &
+  - DISPLAY=:1 xvfb-run java -jar selenium.jar >& /tmp/selenium.log &
   - sleep 5
   - $TRAVIS_BUILD_DIR/tests/scripts/travis_setup.sh
   - cd $HOME/drupal-*
@@ -31,3 +29,5 @@ script:
   - drush coder-review --reviews=production,security,style,i18n,potx,sniffer selenium
   - phpcpd --names *.module,*.inc,*.test sites/all/modules/drupal_selenium
   - drush --uri=http://localhost:8081 test-run "Drupal Selenium Integration"
+after_failure:
+  - cat /tmp/selenium.log
