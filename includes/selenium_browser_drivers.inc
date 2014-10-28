@@ -64,12 +64,12 @@ class SeleniumFirefoxDriver extends SeleniumWebDriver {
     else {
       $message = "Did not get a session id from " . SELENIUM_SERVER_URL . "\n";
       if (!empty($response['body'])) {
-        $message .= $response['body'];
+        $message .= "BODY: {$response['body']}\n";
       }
-      elseif (!empty($response['header'])) {
-        $message .= $response['header'];
+      if (!empty($response['header'])) {
+        $message .= "HEADER: {$response['header']}\n";
       }
-      else {
+      if (empty($response)) {
         $message .= "No response from server.";
       }
       throw new Exception($message);
@@ -125,12 +125,12 @@ class SeleniumChromeDriver extends SeleniumWebDriver {
     else {
       $message = "Did not get a session id from " . SELENIUM_SERVER_URL . "\n";
       if (!empty($response['body'])) {
-        $message .= $response['body'];
+        $message .= "BODY: {$response['body']}\n";
       }
-      elseif (!empty($response['header'])) {
-        $message .= $response['header'];
+      if (!empty($response['header'])) {
+        $message .= "HEADER: {$response['header']}\n";
       }
-      else {
+      if (empty($response)) {
         $message .= "No response from server.";
       }
       throw new Exception($message);
@@ -164,27 +164,24 @@ class SeleniumGenericDriver extends SeleniumWebDriver {
     );
     $variables = array("desiredCapabilities" => $capabilities);
     $response = $this->execute("POST", "/session", $variables);
+    dsm($response);
 
     // Store the session response.
     if (isset($response['body'])) {
       $this->sessionResponse = json_decode($response['body'], TRUE);
+      $this->sessionId = $this->sessionResponse['sessionId'];
     }
 
-    // Parse out the session ID.
-    preg_match("/\nLocation:.*\/(.*)\n/", $response['header'], $matches);
-    if (count($matches) > 0) {
-      $this->sessionId = trim($matches[1]);
-    }
     // If we didn't get any of that, we need to generate an exception.
     else {
       $message = "Did not get a session id from " . SELENIUM_SERVER_URL . "\n";
       if (!empty($response['body'])) {
-        $message .= $response['body'];
+        $message .= "BODY: {$response['body']}\n";
       }
-      elseif (!empty($response['header'])) {
-        $message .= $response['header'];
+      if (!empty($response['header'])) {
+        $message .= "HEADER: {$response['header']}\n";
       }
-      else {
+      if (empty($response)) {
         $message .= "No response from server.";
       }
       throw new Exception($message);

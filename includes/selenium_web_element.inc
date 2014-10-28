@@ -127,7 +127,7 @@ class SeleniumWebElement {
    * @param string $http_type
    *   The type of HTTP request to make (GET, POST, DELETE, etc.).
    * @param string $relative_url
-   *   The portion of the HTTP request to make that comes adter the element ID.
+   *   The portion of the HTTP request to make that comes after the element ID.
    * @param array|null $variables
    *   Any variables to be passed to the function to execute.
    *
