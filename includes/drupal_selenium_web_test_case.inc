@@ -68,6 +68,11 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
     $this->driver = $this->seleniumDriver($this->browser);
   }
 
+  /**
+   * Runs the tests.
+   *
+   * @see DrupalWebTestCase::run()
+   */
   public function run(array $methods = array()) {
     // Determine the status of the server. If we can't connect, abort.
     module_load_include('inc', 'selenium', 'includes/utilities');
@@ -113,7 +118,7 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
       $this->httpauth_credentials = $username . ':' . $password;
     }
 
-    // Start the error handler
+    // Start the error handler.
     set_error_handler(array($this, 'errorHandler'));
 
     // Get class and test info.

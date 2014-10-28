@@ -164,7 +164,6 @@ class SeleniumGenericDriver extends SeleniumWebDriver {
     );
     $variables = array("desiredCapabilities" => $capabilities);
     $response = $this->execute("POST", "/session", $variables);
-    dsm($response);
 
     // Store the session response.
     if (isset($response['body'])) {
