@@ -59,23 +59,18 @@ class SeleniumWebDriver {
     $curl = curl_init($full_url);
     curl_setopt($curl, CURLOPT_CUSTOMREQUEST, $http_type);
     curl_setopt($curl, CURLOPT_RETURNTRANSFER, TRUE);
-    curl_setopt($curl, CURLOPT_HEADER, TRUE);
+    curl_setopt($curl, CURLOPT_HEADER, FALSE);
     // Add in any variables.
     if (($http_type === "POST" || $http_type === "PUT") && $variables !== NULL) {
       curl_setopt($curl, CURLOPT_POSTFIELDS, $variables);
     }
-    $full_response = curl_exec($curl);
+    $response = array();
+    $response['body'] = curl_exec($curl);
+    $response['info'] = curl_getinfo($curl);
     curl_close($curl);
 
-    // Now that we have the results, split it into a header and body.
-    $response_parts = explode("\r\n\r\n", $full_response, 2);
-    $response['header'] = $response_parts[0];
-    if (!empty($response_parts[1])) {
-      $response['body'] = $response_parts[1];
-    }
-
     // Check the response to ensure it is valid and zero.
-    if (isset($response['body'])) {
+    if ($response !== '') {
       $this->checkResponseStatus($response['body'], $variables);
     }
 
@@ -208,8 +203,8 @@ class SeleniumWebDriver {
    */
   public function getJSONValue($curl_response, $attribute = NULL) {
     // If there's no body, we have a problem right from the get-go.
-    if (!isset($curl_response['body'])) {
-      throw new Exception("Response had no body.\n{$curl_response['header']}");
+    if ($curl_response['body'] == '') {
+      throw new Exception("Response had no body (request to URL: {$curl_response['info']['url']} returned code: {$curl_response['info']['http_code']}");
     }
 
     // Convert the body from JSON to an array.
