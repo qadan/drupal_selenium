@@ -46,8 +46,13 @@ function selenium_form_simpletest_settings_form_alter(&$form, &$form_state) {
     '#type' => 'textarea',
     '#title' => t("Allowed Selenium Browsers"),
     '#description' => t("A list of permitted browsers for use by Selenium. These should be a comma-and-space-separated list of executable browsers available via PATH, e.g., 'firefox, chrome, opera, iexplorer'."),
-
     '#default_value' => variable_get('selenium_allowed_browsers', "firefox, chrome"),
+  );
+  $form['selenium']['selenium_chrome_options'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Chrome chromeOptions Arguments'),
+    '#description' => t('A comma-and-space-separated list of chromeOptions to be passed to Chrome when Selenium starts it. These options should have the preceding -- stripped. In most cases, this should be left alone, and in NO CASE should user-agent be included in this box.'),
+    '#default_value' => variable_get('selenium_chrome_options', "start-maximized, window-size=1024,768"),
   );
   $form['selenium']['selenium_verbose_logging'] = array(
     '#type' => 'checkbox',

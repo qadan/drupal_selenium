@@ -109,6 +109,7 @@ function selenium_install() {
   variable_set('selenium_server_host', 'localhost:4444');
   variable_set('selenium_allowed_browsers', 'firefox, chrome');
   variable_set('selenium_capture_method', 'html');
+  variable_set('selenium_chrome_options', "start-maximized, window-size=1024,768");
 }
 
 /**
@@ -118,4 +119,5 @@ function selenium_uninstall() {
   variable_del('selenium_server_host');
   variable_del('selenium_allowed_browsers');
   variable_del('selenium_capture_method');
+  variable_del('selenium_chrome_options');
 }
