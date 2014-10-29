@@ -25,10 +25,10 @@ before_install:
   - cd $HOME/drupal-*
   - ln -s $TRAVIS_BUILD_DIR sites/all/modules/drupal_selenium
   - drush -y -u 1 en selenium
+  - patch -p1 < sites/all/modules/drupal_selenium/D7-core-selenium.patch
 script:
   - drush coder-review --reviews=production,security,style,i18n,potx,sniffer selenium
   - phpcpd --names *.module,*.inc,*.test sites/all/modules/drupal_selenium
-  # Turn off testing for now; Chrome seems to be not working.
-  # - drush --uri=http://localhost:8081 test-run "Drupal Selenium Integration"
+  - drush --uri=http://localhost:8081 test-run SeleniumWebDriverCookieTestCase
 after_failure:
   - cat /tmp/selenium.log
