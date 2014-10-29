@@ -87,19 +87,20 @@ class SeleniumChromeDriver extends SeleniumWebDriver {
    *
    * @param string $user_agent
    *   The user agent to generate the driver with.
+   * @param array $chrome_options
+   *   An array of chromeOptions to be passed to Chrome.
    *
    * @throws Exception
    *   If the session can't be generated.
    */
-  public function __construct($user_agent) {
+  public function __construct($user_agent, array $chrome_options = array()) {
     // Start the browser with an appropriate set of capabilities.
     $capabilities = array(
       'browserName' => 'chrome',
       'javascriptEnabled' => TRUE,
       'platform' => 'ANY',
     );
-    $args = explode(', ', variable_get('selenium_chrome_options', "start-maximized, window-size=1024,768"));
-    $capabilities['chromeOptions']['args'] = array_merge(array("user-agent=$user_agent"), $args);
+    $capabilities['chromeOptions']['args'] = array_merge(array("user-agent=$user_agent"), $chrome_options);
     $variables = array("desiredCapabilities" => $capabilities);
     $response = $this->execute("POST", "/session", $variables);
 
