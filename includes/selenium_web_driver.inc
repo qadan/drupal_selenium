@@ -4,8 +4,6 @@
  * Selenium Web Driver class and wrapper.
  */
 
-define('SELENIUM_SERVER_URL', 'http://' . variable_get('selenium_server_host', 'localhost:4444') . "/wd/hub");
-
 /**
  * Class of the connection to Webdriver.
  */
