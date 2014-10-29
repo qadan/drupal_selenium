@@ -102,6 +102,10 @@ class SeleniumChromeDriver extends SeleniumWebDriver {
           'start-maximized',
           'window-size=1024,768',
           "user-agent=$user_agent",
+          'no-sandbox',
+          'no-default-browser-check',
+          'no-first-run',
+          'disable-default-apps',
         ),
       ),
     );
