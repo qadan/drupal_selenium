@@ -97,14 +97,9 @@ class SeleniumChromeDriver extends SeleniumWebDriver {
       'browserName' => 'chrome',
       'javascriptEnabled' => TRUE,
       'platform' => 'ANY',
-      'chromeOptions' => array(
-        'args' => array(
-          "user-agent=$user_agent",
-        ),
-      ),
     );
     $args = explode(', ', variable_get('selenium_chrome_options', "start-maximized, window-size=1024,768"));
-    array_merge($capabilities['chromeOptions']['args'], $args);
+    $capabilities['chromeOptions']['args'] = array_merge(array("user-agent=$user_agent"), $args);
     $variables = array("desiredCapabilities" => $capabilities);
     $response = $this->execute("POST", "/session", $variables);
 
