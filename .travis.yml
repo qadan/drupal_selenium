@@ -26,6 +26,6 @@ before_install:
 script:
   - drush coder-review --reviews=production,security,style,i18n,potx,sniffer selenium
   - phpcpd --names *.module,*.inc,*.test sites/all/modules/drupal_selenium
-  - drush --uri=http://localhost:8081 test-run SeleniumWebDriverCookieTestCase
+  - drush --uri=http://localhost:8081 test-run "Drupal Selenium Integration"
 after_failure:
   - cat /tmp/selenium.log
