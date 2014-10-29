@@ -57,23 +57,18 @@ class SeleniumWebDriver {
     $curl = curl_init($full_url);
     curl_setopt($curl, CURLOPT_CUSTOMREQUEST, $http_type);
     curl_setopt($curl, CURLOPT_RETURNTRANSFER, TRUE);
-    curl_setopt($curl, CURLOPT_HEADER, TRUE);
+    curl_setopt($curl, CURLOPT_HEADER, FALSE);
     // Add in any variables.
     if (($http_type === "POST" || $http_type === "PUT") && $variables !== NULL) {
       curl_setopt($curl, CURLOPT_POSTFIELDS, $variables);
     }
-    $full_response = curl_exec($curl);
+    $response = array();
+    $response['body'] = curl_exec($curl);
+    $response['info'] = curl_getinfo($curl);
     curl_close($curl);
 
-    // Now that we have the results, split it into a header and body.
-    $response_parts = explode("\r\n\r\n", $full_response, 2);
-    $response['header'] = $response_parts[0];
-    if (!empty($response_parts[1])) {
-      $response['body'] = $response_parts[1];
-    }
-
     // Check the response to ensure it is valid and zero.
-    if (isset($response['body'])) {
+    if ($response !== '') {
       $this->checkResponseStatus($response['body'], $variables);
     }
 
@@ -158,7 +153,7 @@ class SeleniumWebDriver {
     );
 
     $locator_parts = explode("=", $locator, 2);
-    // Explicit Selelenium 1 selectors.
+    // Explicit Selenium 1 selectors.
     if (array_key_exists($locator_parts[0], $se1_to_se2) && $locator_parts[1]) {
       $strategy = $se1_to_se2[$locator_parts[0]];
       $value = $locator_parts[1];
@@ -206,20 +201,20 @@ class SeleniumWebDriver {
    */
   public function getJSONValue($curl_response, $attribute = NULL) {
     // If there's no body, we have a problem right from the get-go.
-    if (!isset($curl_response['body'])) {
-      throw new Exception("Response had no body.\n{$curl_response['header']}");
+    if ($curl_response['body'] == '') {
+      throw new Exception("Response had no body (request to URL: {$curl_response['info']['url']} returned code: {$curl_response['info']['http_code']}");
     }
 
     // Convert the body from JSON to an array.
-    $array = json_decode(trim($curl_response['body']), TRUE);
+    $body = json_decode(trim($curl_response['body']), TRUE);
     // Throw an exception if something went wrong trying to decode the body.
-    if ($array === NULL) {
+    if ($body === NULL) {
       throw new Exception("Body could not be decoded as JSON\n{$curl_response['body']}");
     }
     // Throw an exception if the value array is missing.
-    if (!isset($array["value"])) {
-      if (is_null($array['value'])) {
-        $array['value'] = array();
+    if (!isset($body["value"])) {
+      if (is_null($body['value'])) {
+        $body['value'] = array();
       }
       else {
         throw new Exception("JSON had no value array.");
@@ -228,32 +223,32 @@ class SeleniumWebDriver {
 
     // If $attribute is null, just return the whole value array.
     if ($attribute === NULL) {
-      $rv = $array["value"];
+      $value = $body["value"];
     }
     // Otherwise, it's time to try to extract the attribute.
     else {
       // If it's found on the top level, we're good.
-      if (isset($array["value"][$attribute])) {
-        $rv = $array["value"][$attribute];
+      if (isset($body["value"][$attribute])) {
+        $value = $body["value"][$attribute];
       }
       // If it's not found on the top level, we go one level deeper to find it.
-      elseif (is_array($array["value"])) {
-        $rv = array();
-        foreach ($array["value"] as $a_value) {
+      elseif (is_array($body["value"])) {
+        $value = array();
+        foreach ($body["value"] as $a_value) {
           if (isset($a_value[$attribute])) {
-            $rv[] = $a_value[$attribute];
+            $value[] = $a_value[$attribute];
           }
           // Make a stink if nothing is found.
           else {
-            throw new Exception("JSON value did not have attribute $attribute\n" . $array["value"]["message"]);
+            throw new Exception("JSON value did not have attribute $attribute\n" . $body["value"]["message"]);
           }
         }
       }
       else {
-        throw new Exception("JSON value did not have attribute $attribute\n" . $array["value"]["message"]);
+        throw new Exception("JSON value did not have attribute $attribute\n" . $body["value"]["message"]);
       }
     }
-    return $rv;
+    return $value;
   }
 
   /**

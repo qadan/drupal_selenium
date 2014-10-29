@@ -54,10 +54,6 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
       $this->captureType = variable_get('selenium_capture_method', 'html');
     }
 
-    // Set allowed browsers before we set up the test.
-    $allowed_browsers = variable_get('selenium_allowed_browsers', 'firefox, chrome');
-    $allowed_browsers = explode(', ', $allowed_browsers);
-
     // Use the parent setUp() function to enable any required modules.
     $modules = func_get_args();
     if (isset($modules[0]) && is_array($modules[0])) {
@@ -68,46 +64,38 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
     $modules[] = 'selenium';
     parent::setUp($modules);
 
-    // Determine what browser to run. Also determine if we are allowed to use
-    // the browser in question. Firefox is run when no other browser is present.
-    $browser = 'firefox';
-    if (in_array($this->browser, $allowed_browsers)) {
-      $browser = $this->browser;
-    }
-
-    // Instantiate the driver.
-    $this->driver = $this->seleniumDriver($browser);
+    // Instantiate the browser if we were able to validate it.
+    $this->driver = $this->seleniumDriver($this->browser);
   }
 
   /**
-   * Runs all tests in this class.
+   * Runs the tests.
    *
    * @see DrupalWebTestCase::run()
    */
   public function run(array $methods = array()) {
-    // Determine the status of the server.
+    // Determine the status of the server. If we can't connect, abort.
     module_load_include('inc', 'selenium', 'includes/utilities');
     $url = variable_get('selenium_server_host', 'localhost:4444');
     $response = selenium_get_server_status($url);
     if (!$response || $response === NULL) {
+      $method_info = new ReflectionMethod('DrupalSeleniumWebTestCase', 'run');
       $caller = array(
-        'file' => 'drupal_selenium_web_test_case.inc',
-        // Coder thinks this uses unary operators and it's driving me nuts.
-        // @codingStandardsIgnoreStart
-        'line' => __LINE__ - 6,
-        // @codingStandardsIgnoreEnd
+        'file' => $method_info->getFileName(),
+        'line' => $method_info->getStartLine() + 12,
         'function' => 'DrupalSeleniumWebTestCase->run()',
       );
       DrupalTestCase::insertAssert($this->testId, get_class($this), FALSE, t("Unable to complete Selenium tests as a connection to the server could not be established.", 'Completion check', $caller));
       return;
     }
-    elseif ($response['status'] !== 0) {
+
+    // Determine if the status of the server was 0.
+    if ($response['status'] !== 0) {
       $status_codes = SeleniumWebDriver::getStatusCodes();
+      $method_info = new ReflectionMethod('DrupalSeleniumWebTestCase', 'run');
       $caller = array(
-        'file' => 'drupal_selenium_web_test_case.inc',
-        // @codingStandardsIgnoreStart
-        'line' => __LINE__ - 18,
-        // @codingStandardsIgnoreEnd
+        'file' => $method_info->getFileName(),
+        'line' => $method_info->getStartLine() + 25,
         'function' => 'DrupalSeleniumWebTestCase->run()',
       );
       DrupalTestCase::insertAssert($this->testId, get_class($this), FALSE, t("Unable to complete Selenium tests as the server returned a non-zero status of !status (!message).", array(
@@ -130,8 +118,11 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
       $this->httpauth_credentials = $username . ':' . $password;
     }
 
-    // Start the error handler, then run through the tests.
+    // Start the error handler.
     set_error_handler(array($this, 'errorHandler'));
+
+    // Get class and test info.
+    $info = $this->getInfo();
     $class = get_class($this);
     // Iterate through all the methods in this class, unless a specific list of
     // methods to run was passed.
@@ -139,65 +130,79 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
     if ($methods) {
       $class_methods = array_intersect($class_methods, $methods);
     }
-    foreach ($class_methods as $method) {
-      // If the current method starts with "test", run it - it's a test.
-      if (strtolower(substr($method, 0, 4)) == 'test') {
-        // Get information about test case.
-        $info = $this->getInfo();
-        // If no browsers are set, we use internal.
-        if (!isset($info['browsers'])) {
-          $info['browsers'] = array('internal');
-        }
 
-        // Insert a fail record. This will be deleted on completion to ensure
-        // that testing completed.
-        $method_info = new ReflectionMethod($class, $method);
+    // Spin up each browser in Selenium, then run required tests.
+    module_load_include('inc', 'selenium', 'includes/utilities');
+    foreach ($info['browsers'] as $browser) {
+      // Is the browser valid? If not, skip this one.
+      if (!selenium_check_browser_status($browser)) {
+        $method_info = new ReflectionMethod('DrupalSeleniumWebTestCase', 'run');
         $caller = array(
           'file' => $method_info->getFileName(),
-          'line' => $method_info->getStartLine(),
-          'function' => $class . '->' . $method . '()',
+          'line' => $method_info->getStartLine() + 72,
+          'function' => 'DrupalSeleniumWebTestCase->run()',
         );
+        DrupalTestCase::insertAssert($this->testId, $class, FALSE, t("Could not complete Selenium test using !browser; the browser was not found in \$PATH or is not a valid browser.", array('!browser' => $browser)), 'Browser check', $caller);
+        continue;
+      }
 
-        // Run test in each browser.
-        module_load_include('inc', 'selenium', 'includes/utilities');
-        foreach ($info['browsers'] as $browser) {
-          // Check that the browser specified is available. Don't run if it's
-          // not.
-          $check = selenium_check_browser_status($browser);
-          if (!$check) {
-            DrupalTestCase::insertAssert($this->testId, $class, FALSE, t("Could not complete Selenium test using !browser; the browser was not found in \$PATH.", array('!browser' => $browser)), 'Browser check', $caller);
+      // Everything seems to be okay, so iterate through the tests.
+      foreach ($class_methods as $method) {
+        // If the current method starts with "test", run it - it's a test.
+        if (strtolower(substr($method, 0, 4)) == 'test') {
+          // Get a caller for any fatal, test-breaking errors.
+          $method_info = new ReflectionMethod($class, $method);
+          $caller = array(
+            'file' => $method_info->getFileName(),
+            'line' => $method_info->getStartLine(),
+            'function' => $class . '->' . $method . '()',
+          );
+
+          // This completion check exists to be printed out to the test results
+          // if a fatal error is encountered. Otherwise, it will be removed
+          // before the test results are passed back.
+          $completion_check_id = DrupalTestCase::insertAssert($this->testId, $class, FALSE, t('The test did not complete due to a fatal error.'), 'Completion check', $caller);
+
+          // Finally, try to set up, run, and tear down the test.
+          $this->browser = $browser;
+          $this->setUp();
+
+          // Did Selenium return an appropriate response? If not, skip this one.
+          if (isset($this->driver->sessionResponse['status']) && $this->driver->sessionResponse['status'] !== 0) {
+            $message = $this->driver->sessionResponse['value']['message'];
+            $method_info = new ReflectionMethod('DrupalSeleniumWebTestCase', 'run');
+            $caller = array(
+              'file' => $method_info->getFileName(),
+              'line' => $method_info->getStartLine() + 109,
+              'function' => 'DrupalSeleniumWebTestCase->run()',
+            );
+            DrupalTestCase::insertAssert($this->testId, $class, FALSE, t("Invalid session response returned from Selenium server attempting to instantiate with browser !browser: !message", array(
+              '!message' => $message,
+              '!browser' => $this->browser,
+            )), 'Server check', $caller);
+            continue;
           }
-          else {
-            // If it is, set the browser, and start testing.
-            $this->browser = $browser;
 
-            $completion_check_id = DrupalTestCase::insertAssert($this->testId, $class, FALSE, t('The test did not complete due to a fatal error.'), 'Completion check', $caller);
+          // Was the test set up properly? If not, don't run the test.
+          if ($this->setup) {
             try {
-              $this->setUp();
-              // After the setUp() phase initializes the appropriate web driver,
-              // the response from session initialization is stored. We check
-              // it to see if the session even exists properly.
-              if (isset($this->driver->sessionResponse['status']) && $this->driver->sessionResponse['status'] !== 0) {
-                $message = $this->driver->sessionResponse['value']['message'];
-                DrupalTestCase::insertAssert($this->testId, $class, FALSE, t("Invalid session response returned from Selenium server: !message", array('!message' => $message)), 'Server check', $caller);
-              }
-              // Otherwise, run the test.
-              else {
-                $this->$method();
-              }
-              // Finish up.
+              $this->$method();
             }
             catch (Exception $e) {
               $this->exceptionHandler($e);
             }
             $this->tearDown();
-            // Remove the completion check record.
-            DrupalTestCase::deleteAssert($completion_check_id);
           }
+          else {
+            $this->fail(t("The test cannot be executed because it has not been set up properly."));
+          }
+          // We made it out the other end okay, so we can get rid of this.
+          DrupalTestCase::deleteAssert($completion_check_id);
         }
       }
     }
-    // Clear out the error messages and restore error handler.
+    // Test run process is done, so we can get methods and restore the old error
+    // handler.
     drupal_get_messages();
     restore_error_handler();
   }
@@ -453,14 +458,17 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    *   Which link to assert, if there are multiple.
    * @param string $message
    *   The message to pass to the test results.
+   * @param string $group
+   *   The group this test result belongs to.
    *
    * @return bool
    *   TRUE on success, or FALSE on failure.
    */
-  protected function assertLink($label, $index = 0, $message = '') {
+  protected function assertLink($label, $index = 0, $message = '', $group = '') {
     $links = $this->waitForElements('link=' . $label);
     $message = ($message ? $message : t('Link with label %label found.', array('%label' => $label)));
-    return $this->assertTrue(isset($links[$index]), $message, "Selenium WebDriver: {$this->browser}");
+    $group = $group == '' ? "Selenium WebDriver: {$this->browser}" : $group;
+    return $this->assertTrue(isset($links[$index]), $message, $group);
   }
 
   /**
@@ -502,14 +510,17 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    *   Link position counting from zero.
    * @param string $message
    *   The message to display.
+   * @param string $group
+   *   The group this test belongs to.
    *
    * @return bool
    *   TRUE if the assertion succeeded, FALSE otherwise.
    */
-  protected function assertNoLink($label, $index = 0, $message = '') {
+  protected function assertNoLink($label, $index = 0, $message = '', $group = '') {
     $links = $this->waitForElements('link=' . $label);
     $message = ($message ? $message : t('Link with label %label found.', array('%label' => $label)));
-    return $this->assertFalse(isset($links[$index]), $message, "Selenium WebDriver: {$this->browser}");
+    $group = $group == '' ? "Selenium WebDriver: {$this->browser}" : $group;
+    return $this->assertFalse(isset($links[$index]), $message, $group);
   }
 
   /**
@@ -521,14 +532,17 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    *   Link position counting from zero.
    * @param string $message
    *   The message to display.
+   * @param string $group
+   *   The group this test belongs to.
    *
    * @return bool
    *   TRUE if the assertion succeeded, FALSE otherwise.
    */
-  protected function assertLinkByHref($href, $index = 0, $message = '') {
+  protected function assertLinkByHref($href, $index = 0, $message = '', $group = '') {
     $links = $this->getAllElements("//a[contains(@href, '$href')]", TRUE);
     $message = ($message ? $message : t('Link containing href %href found.', array('%href' => $href)));
-    return $this->assertTrue(isset($links[$index]), $message, "Selenium WebDriver: {$this->browser}");
+    $group = $group == '' ? "Selenium WebDriver: {$this->browser}" : $group;
+    return $this->assertTrue(isset($links[$index]), $message, $group);
   }
 
   /**
@@ -912,13 +926,7 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    *   The name of the current test.
    */
   protected function getTestName() {
-    $backtrace = debug_backtrace();
-    foreach ($backtrace as $bt_item) {
-      if (strtolower(substr($bt_item['function'], 0, 4)) == 'test') {
-        return $bt_item['function'];
-      }
-    }
-    return '';
+    return get_class($this);
   }
 
   /**

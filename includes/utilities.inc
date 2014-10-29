@@ -103,8 +103,10 @@ function selenium_get_server_status($url) {
  */
 function selenium_check_browser_status($browser) {
   if ($browser == 'chrome') {
-    $browser = 'google-chrome';
+    $path = exec("which google-chrome");
   }
-  $path = exec("which $browser");
-  return is_executable($path);
+  else {
+    $path = exec("which $browser");
+  }
+  return is_executable($path) && in_array($browser, explode(', ', variable_get('selenium_allowed_browsers', 'firefox, chrome')));
 }

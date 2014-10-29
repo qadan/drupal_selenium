@@ -28,6 +28,7 @@ class SeleniumWebElementFindTestCase extends DrupalSeleniumWebTestCase {
    */
   public function setUp() {
     parent::setUp('generic_page');
+    $this->openUrl('generic_page');
   }
 
   /**
@@ -35,7 +36,6 @@ class SeleniumWebElementFindTestCase extends DrupalSeleniumWebTestCase {
    */
   public function testFindAllElements() {
     $elements = $this->getAllElements('xpath=//*[@id="edit-generic-page-fieldset"]/div/table[2]/tbody/tr');
-    debug($elements);
     $this->assertEqual(count($elements), 2, "Both table row elements on the page were found using getAllElements..");
   }
 
@@ -90,6 +90,7 @@ class SeleniumWebElementInteractTestCase extends DrupalSeleniumWebTestCase {
    */
   public function setUp() {
     parent::setUp('generic_page');
+    $this->openUrl('generic_page');
   }
 
   /**
@@ -151,6 +152,7 @@ class SeleniumWebElementPropertyTestCase extends DrupalSeleniumWebTestCase {
    */
   public function setUp() {
     parent::setUp('generic_page');
+    $this->openUrl('generic_page');
   }
 
   /**
@@ -234,6 +236,7 @@ class SeleniumWebElementOptionGetTestCase extends DrupalSeleniumWebTestCase {
    */
   public function setUp() {
     parent::setUp('generic_page');
+    $this->openUrl('generic_page');
   }
 
   /**
@@ -330,6 +333,7 @@ class SeleniumWebElementOptionSetTestCase extends DrupalSeleniumWebTestCase {
    */
   public function setUp() {
     parent::setUp('generic_page');
+    $this->openUrl('generic_page');
   }
 
   /**
@@ -405,6 +409,7 @@ class SeleniumWebElementTextSetTestCase extends DrupalSeleniumWebTestCase {
    */
   public function setUp() {
     parent::setUp('generic_page');
+    $this->openUrl('generic_page');
   }
 
   /**
