@@ -5,16 +5,12 @@ php:
 branches:
   only:
     - 7.x
-env:
-  - FEDORA_VERSION="3.5"
-  - FEDORA_VERSION="3.6.2"
-  - FEDORA_VERSION="3.7.0"
 before_install:
   - cd $HOME
   - sudo apt-get -y install libxss1 xdg-utils libappindicator1
   - wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
   - sudo dpkg -i google-chrome*.deb
-  - wget http://chromedriver.storage.googleapis.com/2.11/chromedriver_linux64.zip
+  - wget http://chromedriver.storage.googleapis.com/`curl http://chromedriver.storage.googleapis.com/LATEST_RELEASE`/chromedriver_linux64.zip
   - unzip chromedriver_linux64.zip
   - sudo chmod 755 chromedriver
   - sudo mv chromedriver /usr/bin
@@ -25,10 +21,11 @@ before_install:
   - cd $HOME/drupal-*
   - ln -s $TRAVIS_BUILD_DIR sites/all/modules/drupal_selenium
   - drush -y -u 1 en selenium
+  - patch -p1 < sites/all/modules/drupal_selenium/D7-core-selenium.patch
+  - drush vset --yes selenium_chrome_options "start-maximized, window-size=1024,768, no-sandbox, no-default-browser-check, no-first-run, disable-default-apps"
 script:
   - drush coder-review --reviews=production,security,style,i18n,potx,sniffer selenium
   - phpcpd --names *.module,*.inc,*.test sites/all/modules/drupal_selenium
-  # Turn off testing for now; Chrome seems to be not working.
-  # - drush --uri=http://localhost:8081 test-run "Drupal Selenium Integration"
+  - drush --uri=http://localhost:8081 test-run "Drupal Selenium Integration"
 after_failure:
   - cat /tmp/selenium.log

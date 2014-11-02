@@ -44,6 +44,13 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
   protected $captureType = 'none';
 
   /**
+   * Chrome options that will be required by Chrome.
+   *
+   * @var array
+   */
+  protected $chromeOptions;
+
+  /**
    * Sets up the test.
    *
    * @see DrupalWebTestCase::setUp()
@@ -52,6 +59,11 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
     // Set what type of verbose capture method to use, if any.
     if (variable_get('simpletest_verbose', TRUE) == TRUE) {
       $this->captureType = variable_get('selenium_capture_method', 'html');
+    }
+
+    // If this is Chrome, get the chromeOptions.
+    if ($this->browser == 'chrome') {
+      $this->chromeOptions = explode(', ', variable_get('selenium_chrome_options', 'start-maximized, window-size=1024,768'));
     }
 
     // Use the parent setUp() function to enable any required modules.
@@ -244,7 +256,7 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
         return new SeleniumFirefoxDriver($user_agent, $test_id);
 
       case 'chrome':
-        return new SeleniumChromeDriver($user_agent);
+        return new SeleniumChromeDriver($user_agent, $this->chromeOptions);
 
       default:
         return new SeleniumGenericDriver($browser);

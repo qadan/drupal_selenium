@@ -443,7 +443,7 @@ class SeleniumWebElementTextSetTestCase extends DrupalSeleniumWebTestCase {
     // Using the user login page because I can't be arsed to make a properly-
     // submitting page.
     $user = $this->drupalCreateUser(array_keys(module_invoke_all('permission')));
-    $this->openUrl('/user');
+    $this->openUrl('user');
     $this->sendKeysToElement($this->getElement('name=name'), $user->name);
     $pass = $this->getElement('name=pass');
     $this->sendKeysToElement($pass, $user->pass_raw);
