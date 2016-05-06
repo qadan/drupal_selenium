@@ -3,6 +3,11 @@
 /**
  * @file
  * Extension of the Drupal web test case that interacts with Selenium.
+ *
+ * Implements Drupal web test case endpoints that interact with the W3C
+ * WebDriver Protocol.
+ *
+ * @see https://w3c.github.io/webdriver/webdriver-spec.html
  */
 
 // Server details constant.
@@ -1053,8 +1058,6 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
   /**
    * Get the current URL of the browser.
    *
-   * @see http://code.google.com/p/selenium/wiki/JsonWireProtocol#/session/:sessionId/url
-   *
    * @return array|bool
    *   The value array from the response, or FALSE on failure.
    */
@@ -1065,8 +1068,6 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
   /**
    * Get the current page title.
    *
-   * @see http://code.google.com/p/selenium/wiki/JsonWireProtocol#/session/:sessionId/title
-   *
    * @return array|bool
    *   The value array from the response, or FALSE on failure.
    */
@@ -1076,8 +1077,6 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
 
   /**
    * Get the current page source.
-   *
-   * @see http://code.google.com/p/selenium/wiki/JsonWireProtocol#/session/:sessionId/source
    *
    * @return array|bool
    *   The value array from the response, or FALSE on failure.
@@ -1107,8 +1106,6 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
   /**
    * Get a screenshot of the current page.
    *
-   * @see http://code.google.com/p/selenium/wiki/JsonWireProtocol#/session/:sessionId/screenshot
-   *
    * @return string|bool
    *   The screenshot data as a string, or FALSE on failure.
    */
@@ -1118,8 +1115,6 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
 
   /**
    * Get an element.
-   *
-   * @see http://code.google.com/p/selenium/wiki/JsonWireProtocol#/session/:sessionId/element
    *
    * @param string $locator
    *   The method for locating the element.
@@ -1205,8 +1200,6 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
   /**
    * Get all elements found via the locator.
    *
-   * @see http://code.google.com/p/selenium/wiki/JsonWireProtocol#/session/:sessionId/elements
-   *
    * @param string $locator
    *   The method for locating the elements.
    * @param bool $assert
@@ -1237,8 +1230,6 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    *
    * @return SeleniumWebElement|bool
    *   The element that currently has focus, or FALSE on failure.
-   *
-   * @see http://code.google.com/p/selenium/wiki/JsonWireProtocol#/session/:sessionId/element/active
    */
   public function getActiveElement() {
     $element_id = $this->getterHelper('/session/:sessionId/element/active', 'Got the active element', 'POST', NULL, 'ELEMENT');
@@ -1254,8 +1245,6 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    *
    * @return array
    *   The value array from the response.
-   *
-   * @see http://code.google.com/p/selenium/wiki/JsonWireProtocol#/session/:sessionId/window_handle
    */
   public function getWindowHandle() {
     return $this->getterHelper('/session/:sessionId/window_handle', 'Got the current window handle');
@@ -1266,8 +1255,6 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    *
    * @return array
    *   The value array from the response.
-   *
-   * @see http://code.google.com/p/selenium/wiki/JsonWireProtocol#/session/:sessionId/window_handles
    */
   public function getAllWindowHandles() {
     return $this->getterHelper('/session/:sessionId/window_handles', 'Got all window handles');
@@ -1278,8 +1265,6 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    *
    * @return array
    *   The value array from the response.
-   *
-   * @see http://code.google.com/p/selenium/wiki/JsonWireProtocol#/session/:sessionId/cookie
    */
   public function getAllCookies() {
     return $this->getterHelper('/session/:sessionId/cookie', 'Got all cookies');
@@ -1372,8 +1357,6 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    *
    * @returns bool
    *   TRUE on pass, FALSE on failure.
-   *
-   * @see http://code.google.com/p/selenium/wiki/JsonWireProtocol#/session/:sessionId/timeouts/async_script
    */
   public function setAsyncTimeout($milliseconds) {
     $variables = array("ms" => $milliseconds);
@@ -1388,8 +1371,6 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    *
    * @returns bool
    *   TRUE on pass, FALSE on failure.
-   *
-   * @see http://code.google.com/p/selenium/wiki/JsonWireProtocol#/session/:sessionId/timeouts/implicit_wait
    */
   public function setImplicitWait($milliseconds) {
     $variables = array('ms' => $milliseconds);
@@ -1404,8 +1385,6 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    *
    * @returns bool
    *   TRUE on pass, FALSE on failure.
-   *
-   * @see http://code.google.com/p/selenium/wiki/JsonWireProtocol#/session/:sessionId/url
    */
   public function openUrl($url) {
     if (is_array($url)) {
@@ -1429,8 +1408,6 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    *
    * @returns bool
    *   TRUE on pass, FALSE on failure.
-   *
-   * @see http://code.google.com/p/selenium/wiki/JsonWireProtocol#/session/:sessionId/forward
    */
   public function historyForward() {
     return $this->setterHelper('/session/:sessionId/forward', "Moved forward in the browser history");
@@ -1441,8 +1418,6 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    *
    * @returns bool
    *   TRUE on pass, FALSE on failure.
-   *
-   * @see http://code.google.com/p/selenium/wiki/JsonWireProtocol#/session/:sessionId/back
    */
   public function historyBack() {
     return $this->setterHelper('/session/:sessionId/back', "Moved back in the browser history");
@@ -1453,8 +1428,6 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    *
    * @returns bool
    *   TRUE on pass, FALSE on failure.
-   *
-   * @see http://code.google.com/p/selenium/wiki/JsonWireProtocol#/session/:sessionId/refresh
    */
   public function refresh() {
     return $this->setterHelper('/session/:sessionId/refresh', "Refreshed the active page");
@@ -1468,8 +1441,6 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    *
    * @returns bool
    *   TRUE on pass, FALSE on failure.
-   *
-   * @see http://code.google.com/p/selenium/wiki/JsonWireProtocol#/session/:sessionId/window
    */
   public function selectWindow($window_title) {
     $variables = array('name' => $window_title);
@@ -1483,8 +1454,6 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    *
    * @returns bool
    *   TRUE on pass, FALSE on failure.
-   *
-   * @see http://code.google.com/p/selenium/wiki/JsonWireProtocol#/session/:sessionId/window
    */
   public function closeWindow() {
     $handle = $this->getWindowHandle();
@@ -1499,8 +1468,6 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    *
    * @return bool
    *   TRUE on pass, FALSE on failure.
-   *
-   * @see http://code.google.com/p/selenium/wiki/JsonWireProtocol#/session/:sessionId/frame
    */
   public function selectFrame($identifier) {
     $variables = array("id" => $identifier);
@@ -1539,8 +1506,6 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    *
    * @returns bool
    *   TRUE on pass, FALSE on failure.
-   *
-   * @see http://code.google.com/p/selenium/wiki/JsonWireProtocol#/session/:sessionId/cookie
    */
   public function setCookie($name, $value, $path = NULL, $domain = NULL, $secure = FALSE, $http_only = FALSE, $expiry = NULL) {
     $variables = array(
@@ -1570,8 +1535,6 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    *
    * @returns bool
    *   TRUE on pass, FALSE on failure.
-   *
-   * @see http://code.google.com/p/selenium/wiki/JsonWireProtocol#/session/:sessionId/cookie
    */
   public function deleteAllCookies() {
     return $this->setterHelper('/session/:sessionId/cookie', "Deleted all cookies", NULL, 'DELETE');
@@ -1585,8 +1548,6 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    *
    * @returns bool
    *   TRUE on pass, FALSE on failure.
-   *
-   * @see http://code.google.com/p/selenium/wiki/JsonWireProtocol#/session/:sessionId/cookie/:name
    */
   public function deleteCookie($name) {
     return $this->setterHelper("/session/:sessionId/cookie/$name", "Deleted cookie $name", NULL, 'DELETE');
@@ -1611,8 +1572,6 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    *
    * @return mixed
    *   The result of the script.
-   *
-   * @see http://code.google.com/p/selenium/wiki/JsonWireProtocol#/session/:sessionId/execute
    */
   public function executeJsSync($javascript, $arguments = array()) {
     $variables = array(
@@ -1647,8 +1606,6 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    *
    * @return mixed
    *   The result of the script.
-   *
-   * @see http://code.google.com/p/selenium/wiki/JsonWireProtocol#/session/:sessionId/execute_async
    */
   public function executeJsAsync($javascript, $arguments = array()) {
     $variables = array(
@@ -1679,8 +1636,6 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    *
    * @returns bool
    *   TRUE on pass, FALSE on failure.
-   *
-   * @see http://code.google.com/p/selenium/wiki/JsonWireProtocol#/session/:sessionId/moveto
    */
   public function moveCursor($x, $y, $element = NULL) {
     $element = is_object($element) && isset($element->id) ? $element->id : NULL;
@@ -1726,8 +1681,6 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    *
    * @returns bool
    *   TRUE on pass, FALSE on failure.
-   *
-   * @see http://code.google.com/p/selenium/wiki/JsonWireProtocol#/session/:sessionId/click
    */
   public function mouseClickButton($button = 0) {
     $name = $this->getMouseButtonName($button);
@@ -1743,8 +1696,6 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    *
    * @returns bool
    *   TRUE on pass, FALSE on failure.
-   *
-   * @see http://code.google.com/p/selenium/wiki/JsonWireProtocol#/session/:sessionId/buttondown
    */
   public function mouseClickHold($button) {
     $name = $this->getMouseButtonName($button);
@@ -1760,8 +1711,6 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    *
    * @returns bool
    *   TRUE on pass, FALSE on failure.
-   *
-   * @see http://code.google.com/p/selenium/wiki/JsonWireProtocol#/session/:sessionId/buttonup
    */
   public function mouseClickRelease($button) {
     $name = $this->getMouseButtonName($button);
@@ -1775,13 +1724,13 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    * @param int $button
    *   The button to double-click (0 for left, 1 for middle, 2 for right).
    *   Defaults to 0 for left.
+   * @param int $sleep
+   *   The number to pass off to usleep() between clicks.
    *
    * @returns bool
    *   TRUE on pass, FALSE on failure.
-   *
-   * @see http://code.google.com/p/selenium/wiki/JsonWireProtocol#/session/:sessionId/click
    */
-  public function mouseClickDouble($button = 0) {
+  public function mouseClickDouble($button = 0, $sleep = 300000) {
     // There is a native JSONWire endpoint, /session/:sessionId/doubleclick,
     // which is supposed to be able to produce this functionality. It is too
     // slow, however, for some browsers, and so we produce it manually here.
@@ -1795,8 +1744,31 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
       $this->fail("Double-clicked the $name mouse button: $e", "Selenium WebDriver: {$this->browser}");
       return FALSE;
     }
-    usleep(300000);
+    usleep($sleep);
     return $this->setterHelper('/session/:sessionId/click', "Double-clicked the $name mouse button", $variables);
+  }
+
+  /**
+   * Clicks on a specified element.
+   *
+   * @param SeleniumWebElement|null $element
+   *   A SeleniumWebElement to click, or NULL to click on the active element.
+   * @param int $button
+   *   The button to use for clicking.
+   *
+   * @return bool
+   *   TRUE on pass, FALSE on failure.
+   */
+  public function mouseClickElement($element = NULL, $button = 0) {
+    if (is_null($element)) {
+      $element = $this->getActiveElement();
+      if (is_null($element)) {
+        $this->fail("Failed to find element to click on.", "Selenium WebDriver: {$this->browser}");
+      }
+    }
+    $name = $this->getMouseButtonName($button);
+    $variables = array("button" => $button);
+    return $this->elementSetterHelper($element, "/click", "Clicked element (%element%) using button $name", $variables);
   }
 
   /**
@@ -1914,8 +1886,6 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    *
    * @return array
    *   The value array from the response.
-   *
-   * @see http://code.google.com/p/selenium/wiki/JsonWireProtocol#/session/:sessionId/element/:id/text
    */
   public function getElementText($element) {
     return $this->elementGetterHelper($element, '/text', "Got text for element (%element%)");
@@ -1931,8 +1901,6 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    *
    * @return string|NULL
    *   The element's value, or null if it does not have a value attribute.
-   *
-   * @see http://code.google.com/p/selenium/wiki/JsonWireProtocol#/session/:sessionId/element/:id/value
    */
   public function getElementValue($element) {
     return $this->elementGetterHelper($element, '/attribute/value', "Got the value of element (%element%)");
@@ -1946,8 +1914,6 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    *
    * @return bool
    *   Whether the element is displayed.
-   *
-   * @see http://code.google.com/p/selenium/wiki/JsonWireProtocol#/session/:sessionId/element/:id/displayed
    */
   public function isElementDisplayed($element) {
     return $this->elementGetterHelper($element, '/displayed', "Checked if element (%element%) was displayed");
@@ -1961,8 +1927,6 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    *
    * @return bool
    *   Whether the element is enabled.
-   *
-   * @see http://code.google.com/p/selenium/wiki/JsonWireProtocol#/session/:sessionId/element/:id/enabled
    */
   public function isElementEnabled($element) {
     return $this->elementGetterHelper($element, '/enabled', "Checked if element (%element%) was enabled");
@@ -1979,8 +1943,6 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    *
    * @return bool
    *   Whether the element is selected.
-   *
-   * @see http://code.google.com/p/selenium/wiki/JsonWireProtocol#/session/:sessionId/element/:id/selected
    */
   public function isElementSelected($element) {
     return $this->elementGetterHelper($element, '/selected', "Checked if element (%element%) was selected");
@@ -2001,8 +1963,6 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    *
    * @return SeleniumWebElement
    *   A SeleniumWebElement JSON object for the located element.
-   *
-   * @see http://code.google.com/p/selenium/wiki/JsonWireProtocol#/session/:sessionId/element/:id/element
    */
   public function getNextElement($element, $locator) {
     $variables = $this->driver->ParseLocator($locator);
@@ -2025,8 +1985,6 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    *
    * @return SeleniumWebElement[]
    *   An array of SeleniumWebElement JSON objects for the located element.
-   *
-   * @see http://code.google.com/p/selenium/wiki/JsonWireProtocol#/session/:sessionId/element/:id/elements
    */
   public function getAllNextElements($element, $locator) {
     $variables = $this->driver->parseLocator($locator);
@@ -2046,8 +2004,6 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    *
    * @return string
    *   The element's tag name, as a lowercase string.
-   *
-   * @see http://code.google.com/p/selenium/wiki/JsonWireProtocol#/session/:sessionId/element/:id/name
    */
   public function getElementTagName($element) {
     return $this->elementGetterHelper($element, '/name', "Queried the tag name of element (%element%)");
@@ -2063,8 +2019,6 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    *
    * @return string|NULL
    *   The value of the attribute, or null if it is not set on the element.
-   *
-   * @see http://code.google.com/p/selenium/wiki/JsonWireProtocol#/session/:sessionId/element/:id/attribute/:name
    */
   public function getElementAttributeValue($element, $attribute_name) {
     return $this->elementGetterHelper($element, "/attribute/$attribute_name", "Got the value of attribute $attribute_name for element (%element%)");
@@ -2080,8 +2034,6 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    *
    * @return bool
    *   Whether the two elements given refer to the same element.
-   *
-   * @see http://code.google.com/p/selenium/wiki/JsonWireProtocol#/session/:sessionId/element/:id/equals/:other
    */
   public function elementIsSameElementAs($element, $other_element) {
     return $this->elementGetterHelper($element, "/equals/{$other_element->id}", "Compared element (%element%) to element with ID {$other_element->id}");
@@ -2099,8 +2051,6 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    * @return array
    *   An associative array containing four elements, two of which ('x' and 'y')
    *   are the x and y coordinates of the element.
-   *
-   * @see http://code.google.com/p/selenium/wiki/JsonWireProtocol#/session/:sessionId/element/:id/location
    */
   public function getElementLocation($element) {
     return $this->elementGetterHelper($element, '/location', "Got the location of element (%element%)");
@@ -2114,8 +2064,6 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    *
    * @return array
    *   The size of the element, in pixels, as array(int width, int height).
-   *
-   * @see http://code.google.com/p/selenium/wiki/JsonWireProtocol#/session/:sessionId/element/:id/size
    */
   public function getElementSize($element) {
     return $this->elementGetterHelper($element, '/size', "Got the size of element (%element%)");
@@ -2135,8 +2083,6 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    *
    * @return string
    *   The value of the specified CSS property.
-   *
-   * @see http://code.google.com/p/selenium/wiki/JsonWireProtocol#/session/:sessionId/element/:id/css/:propertyName
    */
   public function getElementCSSProperty($element, $property_name) {
     return $this->elementGetterHelper($element, "/css/$property_name", "Got the value of the CSS property $property_name for element (%element%)");
@@ -2193,8 +2139,6 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    *
    * The submit command may also be applied to any element that is a descendant
    * of a FORM element.
-   *
-   * @see http://code.google.com/p/selenium/wiki/JsonWireProtocol#/session/:sessionId/element/:id/submit
    */
   public function submitElement($element) {
     $result = $this->elementSetterHelper($element, '/submit', "Submitted form from element (%element%)");
@@ -2211,8 +2155,6 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    *
    * @return bool
    *   TRUE on success, FALSE on failure.
-   *
-   * @see http://code.google.com/p/selenium/wiki/JsonWireProtocol#/session/:sessionId/element/:id/click
    */
   public function clickElement($element) {
     return $this->elementSetterHelper($element, '/click', "Clicked on element (%element%)");
@@ -2226,8 +2168,6 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    *
    * @return bool
    *   TRUE on success, FALSE on failure.
-   *
-   * @see http://code.google.com/p/selenium/wiki/JsonWireProtocol#/session/:sessionId/element/:id/clear
    */
   public function clearElement($element) {
     return $this->elementSetterHelper($element, '/clear', "Cleared element (%element%)");
@@ -2241,8 +2181,6 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    *
    * @return bool
    *   TRUE on success, FALSE on failure.
-   *
-   * @see http://code.google.com/p/selenium/wiki/JsonWireProtocol#/session/:sessionId/element/:id/selected
    */
   public function selectElement($element) {
     return $this->elementSetterHelper($element, '/select', "Selected element (%element%)");
@@ -2258,8 +2196,6 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    *
    * @return bool
    *   TRUE on success, FALSE on failure.
-   *
-   * @see http://code.google.com/p/selenium/wiki/JsonWireProtocol#/session/:sessionId/element/:id/value
    */
   public function sendKeysToElement($element, $keys) {
     $variables = array(
@@ -2284,8 +2220,6 @@ class DrupalSeleniumWebTestCase extends DrupalWebTestCase {
    * @param int $pixels_down
    *   The number of pixels to drag the element vertically. Use negative numbers
    *   to drag the element up.
-   *
-   * @see http://code.google.com/p/selenium/wiki/JsonWireProtocol#/session/:sessionId/element/:id/drag
    */
   public function dragAndDropElement($element, $pixels_right, $pixels_down) {
     $this->moveCursor(0, 0, $element);

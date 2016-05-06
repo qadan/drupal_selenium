@@ -82,6 +82,7 @@ mouseClickButton|Click a mouse button.
 mouseClickDouble|Double-click the left mouse button.
 mouseClickHold|Hold down a mouse button.
 mouseClickRelease|Release a mouse button.
+mouseClickElement|Click on a specified element.
 moveCursor|Move the cursor relative to an element or to its current position.
 
 ## Get Element Properties

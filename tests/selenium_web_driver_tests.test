@@ -273,6 +273,7 @@ class SeleniumWebDriverMouseTestCase extends DrupalSeleniumWebTestCase {
   public function setUp() {
     parent::setUp('generic_page');
     $this->openUrl('generic_page');
+    $this->checkbox = $this->getElement('name=checkbox');
   }
 
   /**
@@ -288,30 +289,52 @@ class SeleniumWebDriverMouseTestCase extends DrupalSeleniumWebTestCase {
    * @TODO: Implement this when the feature is added to Selenium.
    */
   public function testMoveCursorToElement() {
-    $checkbox = $this->getElement('name=checkbox');
-    $this->moveCursor(0, 0, $checkbox);
+    // Moving a pixel in from the corner ensures that we manage to click the
+    // element whether the WebDriver implementation centers the pointer on the
+    // element or if it sets it in the unclickable top corner of the element.
+    $this->moveCursor(1, 1, $this->checkbox);
     $this->mouseClickButton();
-    $this->assertTrue($this->isElementSelected($checkbox), "Moving mouse to the checkbox element and clicking on it enabled it.");
+    $this->assertTrue($this->isElementSelected($this->checkbox), "Moving mouse to the checkbox element and clicking on it enabled it.");
   }
 
   /**
    * Double-clicks an element and sees if this produces the desired result.
    */
   public function testMouseClickDouble() {
-    $checkbox = $this->getElement('name=checkbox');
-    $this->moveCursor(0, 0, $checkbox);
+    $this->moveCursor(1, 1, $this->checkbox);
     $this->mouseClickDouble();
-    $this->assertFalse($this->isElementSelected($checkbox), "Moving mouse to the checkbox element and double clicking on it disabled it.");
+    $this->assertFalse($this->isElementSelected($this->checkbox), "Moving mouse to the checkbox element and double clicking on it disabled it.");
   }
 
   /**
    * Tests that holding and then releasing a mouse button counts as a click.
    */
   public function testMouseClickHoldRelease() {
-    $checkbox = $this->getElement('name=checkbox');
-    $this->moveCursor(0, 0, $checkbox);
+    $this->moveCursor(1, 1, $this->checkbox);
     $this->mouseClickHold(0);
     $this->mouseClickRelease(0);
-    $this->assertTrue($this->isElementSelected($checkbox), "Moving mouse to the checkbox element and holding/releasing the mouse button enabled it.");
+    $this->assertTrue($this->isElementSelected($this->checkbox), "Moving mouse to the checkbox element and holding/releasing the mouse button enabled it.");
+  }
+
+  /**
+   * Tests that clicking a specified element works.
+   */
+  public function testMouseClickElement() {
+    $this->mouseClickElement($this->checkbox);
+    $this->assertTrue($this->isElementSelected($this->checkbox), "Specifying the checkbox outright and clicking it enabled it.");
+  }
+
+  /**
+   * Tests that clicking the active element works.
+   */
+  public function testMouseClickActiveElement() {
+    $this->moveCursor(1, 1, $this->checkbox);
+    $this->mouseClickButton();
+    if ($this->assertTrue($this->isElementSelected($this->checkbox), "Moved the mouse to the checkbox.")) {
+      $this->mouseClickElement(NULL);
+      $this->assertFalse($this->isElementSelected($this->checkbox), "Activating the checkbox and clicking the active element disabled the checkbox.");
+      return;
+    }
+    $this->fail("Failed to activate the checkbox in order to test clicking the active element.", "Selenium WebDriver: $this->browser");
   }
 }
