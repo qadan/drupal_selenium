@@ -26,7 +26,7 @@ drush dl --yes drupal
 cd drupal-*
 drush si minimal --db-url=mysql://drupal:drupal@localhost/drupal --yes
 drush runserver --php-cgi=$HOME/.phpenv/shims/php-cgi localhost:8081 &>/tmp/drush_webserver.log &
-drush dl --yes coder
+drush dl --yes coder-7.x-2.4
 drush dl --yes potx-7.x-1.0
 drush en --yes coder_review
 drush en --yes simpletest
